@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'Good_Health_Wellbeing', 
 ]
 
 MIDDLEWARE = [

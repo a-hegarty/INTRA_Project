@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Good_Health_Wellbeing', 
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

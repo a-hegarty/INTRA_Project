@@ -5,6 +5,9 @@ from django.http import HttpResponse
 def index(request):
     return render(request, "index.html")
 
-#page to view list of recipies
-def view_recipe_list(request):
-    all_recipies = 
+def create_recipe(request):
+    if request.method == "POST":
+        form = AddRecipeForm(request.POST)
+        if form.is_valid():
+            recipe = form.save()
+            return render(request, )

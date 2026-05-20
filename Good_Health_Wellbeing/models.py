@@ -14,3 +14,11 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Recipe(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField()
+    cuisine = models.CharField()
+    diet = models.CharField()
+    tags = models.CharField()
+    author = models.CharField()

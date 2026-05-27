@@ -15,6 +15,9 @@ class Ingredient(models.Model):
     def __str__(self):
         return self.name
     
+class Cuisine(models.Model):
+    id = models.AutoField
+    
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField()

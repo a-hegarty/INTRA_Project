@@ -9,6 +9,7 @@ class AddRecipeForm(forms.ModelForm):
             'cuisine',
             'diet',
             'tags',
+            'time',
             'ingredients',
             'instructions'
         ]
@@ -19,6 +20,7 @@ class AddRecipeForm(forms.ModelForm):
         cuisine = data['cuisine']
         diet = data['diet']
         tags = data['tags']
+        time = data["time"]
         ingredients = data['ingredients']
         instructions = data['instructions']
         return data

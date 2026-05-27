@@ -12,7 +12,10 @@ def createrecipe(request):
         form = AddRecipeForm(request.POST)
         if form.is_valid():
             recipe = form.save()
-            return render(request)
+            return render(request, "createrecipe.html")
         
 def api(request):
-    
+    return render (request, "search.html")
+
+def profile(request):
+    return render (request, "profile.html")

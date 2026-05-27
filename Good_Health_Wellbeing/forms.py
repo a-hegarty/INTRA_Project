@@ -7,8 +7,18 @@ class AddRecipeForm(forms.ModelForm):
         fields = [
             'name',
             'cuisine',
-            'diet'
+            'diet',
             'tags',
             'ingredients',
             'instructions'
         ]
+
+    def clean(self):
+        data = self.cleaned_data
+        name = data['name']
+        cuisine = data['cuisine']
+        diet = data['diet']
+        tags = data['tags']
+        ingredients = data['ingredients']
+        instructions = data['instructions']
+        return data

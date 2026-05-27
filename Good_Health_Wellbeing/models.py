@@ -21,6 +21,7 @@ class Recipe(models.Model):
     cuisine = models.CharField()
     diet = models.CharField()
     tags = models.CharField()
+    time = models.TimeField()
     ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     instructions = models.CharField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)

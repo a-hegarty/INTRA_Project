@@ -1,98 +1,126 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+// @ts-ignore
+import { COLORS, FONTS } from '../../theme'; 
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+// Placeholder ingredients
+const MY_INGREDIENTS = ['Chicken Breast', 'Spinach', 'Brown Rice', 'Garlic', 'Lemon', 'Olive Oil'];
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+export default function Page() {
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        
+        {/* Main Title */}
+        <Text style={styles.mainTitle}>Pantry</Text>
+        <Text style={styles.subtitle}>What's in your kitchen?</Text>
+        <Text style={styles.description}>Add your ingredients and we'll find healthy meals</Text>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Text style={styles.labelText}>Search Ingredients</Text>
+          <TextInput 
+            style={styles.searchBar} 
+            placeholder="e.g. Chicken, Spinach, Oats"
+            placeholderTextColor={COLORS.textLightGray}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        {/* Ingredients Section */}
+        <View style={styles.ingredientsSection}>
+          <Text style={styles.sectionHeader}>Your Ingredients ({MY_INGREDIENTS.length})</Text>
+          
+          <View style={styles.pillContainer}>
+            {MY_INGREDIENTS.map((item, index) => (
+              <TouchableOpacity key={index} style={styles.pill}>
+                <Text style={styles.pillText}>{item}</Text>
+                <Text style={styles.pillClose}>×</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
+    backgroundColor: COLORS.backgroundWhite,
+  },
+  container: {
+    padding: 24,
+  },
+  mainTitle: {
+    fontSize: FONTS.header.fontSize,
+    fontWeight: FONTS.header.fontWeight as any,
+    color: COLORS.primaryGreen,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: FONTS.subheader.fontSize,
+    fontWeight: FONTS.subheader.fontWeight as any,
+    color: COLORS.textGreen,
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: FONTS.body.fontSize,
+    fontWeight: FONTS.body.fontWeight as any,
+    color: COLORS.textLightGray,
+    marginBottom: 24,
+  },
+  searchContainer: {
+    marginBottom: 28,
+  },
+  labelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textDark,
+    marginBottom: 8,
+  },
+  searchBar: {
+    height: 50,
+    borderColor: COLORS.borderGray,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  ingredientsSection: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textDark,
+    marginBottom: 12,
+  },
+  pillContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap', 
+    gap: 8,        
+  },
+  pill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: COLORS.accentGreen,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  pillText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textGreen,
+    marginRight: 6,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  pillClose: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textGreen,
+    marginTop: -2, 
   },
 });

@@ -10,7 +10,7 @@ class User(models.Model):
     
 class Ingredient(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField()
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
@@ -20,11 +20,11 @@ class Cuisine(models.Model):
     
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField()
-    cuisine = models.CharField()
-    diet = models.CharField()
-    tags = models.CharField()
+    name = models.CharField(max_length=255)
+    cuisine = models.CharField(max_length=255)
+    diet = models.CharField(max_length=255)
+    tags = models.CharField(max_length=255)
     time = models.TimeField()
     ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    instructions = models.CharField()
+    instructions = models.CharField(max_length=1000)
     author = models.ForeignKey(User, on_delete=models.CASCADE)

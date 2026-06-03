@@ -28,14 +28,21 @@ class Diet(models.Model):
         
     def __str__(self):
         return self.name
+
+class Tags(models.Model):
+    id = models.AutoField
+    name = models.CharField(default="")
+        
+    def __str__(self):
+        return self.name
     
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(default='')
     cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
-    diet = models.ForeignKey(Diet, on_delete=models.CASCADE)
-    tags = models.CharField(default='')
+    diet = models.ManyToManyField(Diet)
+    tags = models.ManyToManyField(Tags)
     time = models.TimeField()
-    ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    ingredients = models.ManyToManyField(Ingredient)
     instructions = models.CharField(default='')
     author = models.ForeignKey(User, on_delete=models.CASCADE)

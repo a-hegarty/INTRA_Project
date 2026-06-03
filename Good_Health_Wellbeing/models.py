@@ -44,5 +44,5 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(Tags)
     time = models.TimeField()
     ingredients = models.ManyToManyField(Ingredient)
-    instructions = models.CharField(default='')
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    instructions = models.TextField(default='')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)

@@ -53,7 +53,7 @@ export default function Page() {
           <Slider
             style={styles.slider}
             minimumValue={0}
-            maximumValue={5}
+            maximumValue={10}
             step={1} 
             value={missingCount}
             onValueChange={(val) => setMissingCount(val)} 

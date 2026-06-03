@@ -3,28 +3,39 @@ from django.db import models
 # model of end user
 class User(models.Model):
     id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=50)
+    username = models.CharField(max_length=50, default='anonymoususer')
 
     def __str__(self):
         return self.username
     
 class Ingredient(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField()
+    name = models.CharField(default='')
 
     def __str__(self):
         return self.name
     
 class Cuisine(models.Model):
     id = models.AutoField
+    name = models.CharField(default="")
+        
+    def __str__(self):
+        return self.name
+    
+class Diet(models.Model):
+    id = models.AutoField
+    name = models.CharField(default="")
+        
+    def __str__(self):
+        return self.name
     
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField()
-    cuisine = models.CharField()
-    diet = models.CharField()
-    tags = models.CharField()
+    name = models.CharField(default='')
+    cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
+    diet = models.ForeignKey(Diet, on_delete=models.CASCADE)
+    tags = models.CharField(default='')
     time = models.TimeField()
     ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    instructions = models.CharField()
+    instructions = models.CharField(default='')
     author = models.ForeignKey(User, on_delete=models.CASCADE)

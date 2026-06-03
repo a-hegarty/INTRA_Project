@@ -43,6 +43,10 @@ class Recipe(models.Model):
     cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
     diet = models.ManyToManyField(Diet)
     tags = models.ManyToManyField(Tags)
+    time = models.IntegerField()
     ingredients = models.ManyToManyField(Ingredient)
     instructions = models.TextField(default='')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name

@@ -10,39 +10,39 @@ class User(models.Model):
     
 class Ingredient(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(default='')
+    name = models.CharField(max_length=255, default='')
 
     def __str__(self):
         return self.name
     
 class Cuisine(models.Model):
-    id = models.AutoField
-    name = models.CharField(default="")
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, default="")
         
     def __str__(self):
         return self.name
     
 class Diet(models.Model):
-    id = models.AutoField
-    name = models.CharField(default="")
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, default="")
         
     def __str__(self):
         return self.name
 
 class Tags(models.Model):
-    id = models.AutoField
-    name = models.CharField(default="")
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, default="")
         
     def __str__(self):
         return self.name
     
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(default='')
+    name = models.CharField(max_length=255, default='')
+    
     cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
     diet = models.ManyToManyField(Diet)
     tags = models.ManyToManyField(Tags)
-    time = models.TimeField()
     ingredients = models.ManyToManyField(Ingredient)
     instructions = models.TextField(default='')
     author = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)

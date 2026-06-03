@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-// @ts-ignore
+import Slider from '@react-native-community/slider';
+// @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 
-// Placeholder ingredients
 const MY_INGREDIENTS = ['Chicken Breast', 'Spinach', 'Brown Rice', 'Garlic', 'Lemon', 'Olive Oil'];
 
 export default function Page() {
+  const [missingCount, setMissingCount] = useState(0);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         
-        {/* Main Title */}
+        {/* Main Title Section */}
         <Text style={styles.mainTitle}>Pantry</Text>
         <Text style={styles.subtitle}>What's in your kitchen?</Text>
         <Text style={styles.description}>Add your ingredients and we'll find healthy meals</Text>
@@ -38,6 +40,27 @@ export default function Page() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Missing Ingredients Slider Section */}
+        <View style={styles.sliderSection}>
+          <View style={styles.sliderHeaderRow}>
+            <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
+            <Text style={styles.sliderValue}>{missingCount}</Text>
+          </View>
+          <Text style={styles.sliderSubtitle}>Updates live as you adjust recipe strictness...</Text>
+          
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={5}
+            step={1} 
+            value={missingCount}
+            onValueChange={(val) => setMissingCount(val)} 
+            minimumTrackTintColor={COLORS.primaryGreen}  
+            maximumTrackTintColor={COLORS.borderGray}   
+            thumbTintColor={COLORS.textGreen}       
+          />
         </View>
 
       </ScrollView>
@@ -90,7 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   ingredientsSection: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionHeader: {
     fontSize: 18,
@@ -100,8 +123,8 @@ const styles = StyleSheet.create({
   },
   pillContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap', 
-    gap: 8,        
+    flexWrap: 'wrap',
+    gap: 8,
   },
   pill: {
     flexDirection: 'row',
@@ -121,6 +144,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textGreen,
-    marginTop: -2, 
+    marginTop: -2,
+  },
+  sliderSection: {
+    marginBottom: 24,
+  },
+  sliderHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sliderValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.primaryGreen,
+  },
+  sliderSubtitle: {
+    fontSize: 13,
+    color: COLORS.textLightGray,
+    marginTop: -8,
+    marginBottom: 16,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
   },
 });

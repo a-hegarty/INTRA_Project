@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { Link } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 
@@ -12,6 +13,12 @@ export default function Page() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
+
+        {/* Navigation bar */}
+        <View style={styles.navBar}>
+          <Link href="/login" style={styles.navLink}>Login</Link>
+          <Link href="/profile" style={styles.navLink}>Profile</Link>
+        </View>
         
         {/* Main Title Section */}
         <Text style={styles.mainTitle}>Pantry</Text>
@@ -168,5 +175,21 @@ const styles = StyleSheet.create({
   slider: {
     width: '100%',
     height: 40,
+  },
+
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderGray,
+  },
+  navLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textGreen,
+    textDecorationLine: 'underline',
   },
 });

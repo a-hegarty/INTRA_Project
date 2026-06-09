@@ -4,11 +4,13 @@ import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
+import { useAuth } from '../context/AuthContext';
 
 const MY_INGREDIENTS = ['Chicken Breast', 'Spinach', 'Brown Rice', 'Garlic', 'Lemon', 'Olive Oil'];
 
 export default function Page() {
   const [missingCount, setMissingCount] = useState(0);
+  const { isLoggedIn, username } = useAuth();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -16,8 +18,12 @@ export default function Page() {
 
         {/* Navigation bar */}
         <View style={styles.navBar}>
-          <Link href="/login" style={styles.navLink}>Login</Link>
-          <Link href="/profile" style={styles.navLink}>Profile</Link>
+          <Text style={styles.welcomeUser}>Hi, {username} </Text>
+          {isLoggedIn ? (
+            <Link href="/profile" style={styles.navLink}>Profile</Link>
+          ) : (
+            <Link href="/login" style={styles.navLink}>Login</Link>
+          )}
         </View>
         
         {/* Main Title Section */}
@@ -191,5 +197,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textGreen,
     textDecorationLine: 'underline',
+  },
+
+  welcomeUser: {
+    marginRight: 'auto',
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textDark,
   },
 });

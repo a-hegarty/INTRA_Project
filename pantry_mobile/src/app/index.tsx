@@ -6,11 +6,36 @@ import { Link } from 'expo-router';
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
 
-const MY_INGREDIENTS = ['Chicken Breast', 'Spinach', 'Brown Rice', 'Garlic', 'Lemon', 'Olive Oil'];
+// MOCK DATABASE
+const ALL_DATABASE_INGREDIENTS = [
+  'Chicken Breast', 'Chicken Thighs', 'Spinach', 'Brown Rice', 'White Rice',
+  'Garlic', 'Lemon', 'Olive Oil', 'Onions', 'Tomatoes', 'Black Beans',
+  'Cheddar Cheese', 'Eggs', 'Avocado', 'Bell Peppers', 'Flour', 'Butter'
+];
 
 export default function Page() {
   const [missingCount, setMissingCount] = useState(0);
   const { isLoggedIn, username } = useAuth();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [myIngredients, setMyIngredients] = useState(['Chicken Breast', 'Spinach', 'Garlic']); // Starting inventory
+
+  // Filter database based on user typing
+  const filteredSuggestions = ALL_DATABASE_INGREDIENTS.filter(item =>
+    item.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    !myIngredients.includes(item) // Don't show items already added
+  );
+
+  // Add ingredient from search list to "Your Ingredients"
+  const addIngredient = (name: string) => {
+    setMyIngredients([...myIngredients, name]);
+    setSearchQuery(''); // Clear search box after adding
+  };
+
+  // Remove ingredient when clicking the "X"
+  const removeIngredient = (name: string) => {
+    setMyIngredients(myIngredients.filter(item => item !== name));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -31,26 +56,44 @@ export default function Page() {
         <Text style={styles.subtitle}>What's in your kitchen?</Text>
         <Text style={styles.description}>Add your ingredients and we'll find healthy meals</Text>
 
-        {/* Search Bar */}
+        {/* Search Bar Container */}
         <View style={styles.searchContainer}>
           <Text style={styles.labelText}>Search Ingredients</Text>
           <TextInput 
             style={styles.searchBar} 
-            placeholder="e.g. Chicken, Spinach, Oats"
+            placeholder="e.g. Chicken, Spinach, Oats" 
             placeholderTextColor={COLORS.textLightGray}
+            value={searchQuery}
+            onChangeText={setSearchQuery} 
           />
+
+          {/* Dynamic Search Suggestion Dropdown */}
+          {searchQuery.length > 0 && (
+            <View style={styles.suggestionsBox}>
+              {filteredSuggestions.length > 0 ? (
+                filteredSuggestions.map((item, index) => (
+                  <TouchableOpacity key={index} style={styles.suggestionItem} onPress={() => addIngredient(item)}>
+                    <Text style={styles.suggestionText}>➕ {item}</Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.noResultText}>No matching ingredients found</Text>
+              )}
+            </View>
+          )}
         </View>
 
-        {/* Ingredients Section */}
+        {/* Ingredients Section Container */}
         <View style={styles.ingredientsSection}>
-          <Text style={styles.sectionHeader}>Your Ingredients ({MY_INGREDIENTS.length})</Text>
-          
+          <Text style={styles.sectionHeader}>Your Ingredients ({myIngredients.length})</Text>
           <View style={styles.pillContainer}>
-            {MY_INGREDIENTS.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.pill}>
-                <Text style={styles.pillText}>{item}</Text>
-                <Text style={styles.pillClose}>×</Text>
-              </TouchableOpacity>
+            {myIngredients.map((ingredient, index) => (
+              <View key={index} style={styles.pill}>
+                <Text style={styles.pillText}>{ingredient}</Text>
+                <TouchableOpacity onPress={() => removeIngredient(ingredient)}>
+                  <Text style={styles.pillClose}>×</Text>
+                </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>
@@ -204,5 +247,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: COLORS.textDark,
+  },
+
+  suggestionsBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    borderRadius: 12,
+    marginTop: 4,
+    maxHeight: 180,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: COLORS.textDark,
+    fontWeight: '500',
+  },
+  noResultText: {
+    padding: 12,
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    textAlign: 'center',
   },
 });

@@ -1,73 +1,75 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState } from 'react';
 
-type AuthContextType = {
+interface AuthContextType {
   isLoggedIn: boolean;
   username: string;
+  login: (user: string) => void;
+  logout: () => void;
+
   dietaryRestrictions: string[];
-  login: (username: string) => Promise<void>;
-  logout: () => Promise<void>;
-  toggleDiet: (diet: string) => Promise<void>;
-};
+  toggleDiet: (diet: string) => void;
+
+  // Global UI data persistence values
+  globalIngredients: string[];
+  setGlobalIngredients: React.Dispatch<React.SetStateAction<string[]>>;
+  globalMissingCount: number;
+  setGlobalMissingCount: React.Dispatch<React.SetStateAction<number>>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('Anonymous Chef');
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [username, setUsername] = useState('');
+  
+  // Profile specific state configuration
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+  
+  // Global persistence hooks
+  const [globalIngredients, setGlobalIngredients] = useState<string[]>([]);
+  const [globalMissingCount, setGlobalMissingCount] = useState<number>(0);
 
-  // Load saved session on app startup
-  useEffect(() => {
-    async function loadStorageData() {
-      const savedUser = await AsyncStorage.getItem('@user_name');
-      const savedDiets = await AsyncStorage.getItem('@user_diets');
-      if (savedUser) {
-        setUsername(savedUser);
-        setIsLoggedIn(true);
-      }
-      if (savedDiets) {
-        setDietaryRestrictions(JSON.parse(savedDiets));
-      }
-    }
-    loadStorageData();
-  }, []);
-
-  const login = async (user: string) => {
-    const cleanUser = user.trim() || 'Anonymous Chef';
-    await AsyncStorage.setItem('@user_name', cleanUser);
-    setUsername(cleanUser);
+  const login = (user: string) => {
     setIsLoggedIn(true);
+    setUsername(user);
   };
 
-  const logout = async () => {
-    await AsyncStorage.removeItem('@user_name');
-    await AsyncStorage.removeItem('@user_diets');
-    setUsername('Anonymous Chef');
-    setDietaryRestrictions([]);
-    setIsLoggedIn(false);
-  };
-
-  const toggleDiet = async (diet: string) => {
-    let updatedDiets = [...dietaryRestrictions];
-    if (updatedDiets.includes(diet)) {
-      updatedDiets = updatedDiets.filter(d => d !== diet);
+  const toggleDiet = (diet: string) => {
+    if (dietaryRestrictions.includes(diet)) {
+      setDietaryRestrictions(dietaryRestrictions.filter(item => item !== diet));
     } else {
-      updatedDiets.push(diet);
+      setDietaryRestrictions([...dietaryRestrictions, diet]);
     }
-    await AsyncStorage.setItem('@user_diets', JSON.stringify(updatedDiets));
-    setDietaryRestrictions(updatedDiets);
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setGlobalIngredients([]);
+    setGlobalMissingCount(0);
+    setDietaryRestrictions([]);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, username, dietaryRestrictions, login, logout, toggleDiet }}>
-      {" "}{children}{" "}
+    <AuthContext.Provider value={{ 
+      isLoggedIn, 
+      username, 
+      login, 
+      logout,
+      dietaryRestrictions,
+      toggleDiet,
+      globalIngredients, 
+      setGlobalIngredients,
+      globalMissingCount,
+      setGlobalMissingCount
+    }}>
+      {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
-}
+};

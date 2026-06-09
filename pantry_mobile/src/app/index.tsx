@@ -6,36 +6,71 @@ import { Link } from 'expo-router';
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
 
-// MOCK DATABASE
+// Mock Ingredients
 const ALL_DATABASE_INGREDIENTS = [
   'Chicken Breast', 'Chicken Thighs', 'Spinach', 'Brown Rice', 'White Rice',
   'Garlic', 'Lemon', 'Olive Oil', 'Onions', 'Tomatoes', 'Black Beans',
   'Cheddar Cheese', 'Eggs', 'Avocado', 'Bell Peppers', 'Flour', 'Butter'
 ];
 
+// Mock recipes
+const RECIPES_DATABASE = [
+  {
+    id: 1,
+    name: 'Garlic Chicken Thighs Curry',
+    ingredients: ['Chicken Thighs', 'Garlic', 'Onions', 'Tomatoes', 'Olive Oil', 'Bell Peppers'] 
+  },
+  {
+    id: 2,
+    name: 'Healthy Zesty Spinach Salad',
+    ingredients: ['Spinach', 'Lemon', 'Olive Oil', 'Avocado'] 
+  },
+  {
+    id: 3,
+    name: 'Avocado & Cheddar Omelette',
+    ingredients: ['Eggs', 'Avocado', 'Cheddar Cheese', 'Butter'] 
+  }
+];
+
 export default function Page() {
-  const [missingCount, setMissingCount] = useState(0);
-  const { isLoggedIn, username } = useAuth();
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [myIngredients, setMyIngredients] = useState(['Chicken Breast', 'Spinach', 'Garlic']); // Starting inventory
+  
+  const { 
+    isLoggedIn, 
+    username, 
+    globalIngredients, 
+    setGlobalIngredients,
+    globalMissingCount,
+    setGlobalMissingCount 
+  } = useAuth();
 
-  // Filter database based on user typing
+  // Filter dropdown suggestions based on user typing
   const filteredSuggestions = ALL_DATABASE_INGREDIENTS.filter(item =>
     item.toLowerCase().includes(searchQuery.toLowerCase()) && 
-    !myIngredients.includes(item) // Don't show items already added
+    !globalIngredients.includes(item)
   );
 
-  // Add ingredient from search list to "Your Ingredients"
   const addIngredient = (name: string) => {
-    setMyIngredients([...myIngredients, name]);
-    setSearchQuery(''); // Clear search box after adding
+    setGlobalIngredients([...globalIngredients, name]);
+    setSearchQuery('');
   };
 
-  // Remove ingredient when clicking the "X"
   const removeIngredient = (name: string) => {
-    setMyIngredients(myIngredients.filter(item => item !== name));
+    setGlobalIngredients(globalIngredients.filter(item => item !== name));
   };
+
+  const matchingRecipes = RECIPES_DATABASE.filter(recipe => {
+    const matchingCount = recipe.ingredients.filter(
+      ing => globalIngredients.includes(ing)
+    ).length;
+
+    const missingForThisRecipe = recipe.ingredients.length - matchingCount;
+
+    const hasAtLeastOneMatch = matchingCount > 0;
+    const passesSliderThreshold = missingForThisRecipe <= globalMissingCount;
+
+    return hasAtLeastOneMatch && passesSliderThreshold;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -60,7 +95,7 @@ export default function Page() {
         <View style={styles.searchContainer}>
           <Text style={styles.labelText}>Search Ingredients</Text>
           <TextInput 
-            style={styles.searchBar} 
+            style={styles.searchBar}
             placeholder="e.g. Chicken, Spinach, Oats" 
             placeholderTextColor={COLORS.textLightGray}
             value={searchQuery}
@@ -85,9 +120,9 @@ export default function Page() {
 
         {/* Ingredients Section Container */}
         <View style={styles.ingredientsSection}>
-          <Text style={styles.sectionHeader}>Your Ingredients ({myIngredients.length})</Text>
+          <Text style={styles.sectionHeader}>Your Ingredients ({globalIngredients.length})</Text>
           <View style={styles.pillContainer}>
-            {myIngredients.map((ingredient, index) => (
+            {globalIngredients.map((ingredient, index) => (
               <View key={index} style={styles.pill}>
                 <Text style={styles.pillText}>{ingredient}</Text>
                 <TouchableOpacity onPress={() => removeIngredient(ingredient)}>
@@ -102,7 +137,7 @@ export default function Page() {
         <View style={styles.sliderSection}>
           <View style={styles.sliderHeaderRow}>
             <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
-            <Text style={styles.sliderValue}>{missingCount}</Text>
+            <Text style={styles.sliderValue}>{globalMissingCount}</Text>
           </View>
           <Text style={styles.sliderSubtitle}>Updates live as you adjust recipe strictness...</Text>
           
@@ -111,12 +146,39 @@ export default function Page() {
             minimumValue={0}
             maximumValue={10}
             step={1} 
-            value={missingCount}
-            onValueChange={(val) => setMissingCount(val)} 
+            value={globalMissingCount}
+            onValueChange={(val) => setGlobalMissingCount(val)} 
             minimumTrackTintColor={COLORS.primaryGreen}  
             maximumTrackTintColor={COLORS.borderGray}   
             thumbTintColor={COLORS.textGreen}       
           />
+        </View>
+
+        {/* Dynamic matching recipes section */}
+        <View style={styles.recipesContainer}>
+          <Text style={styles.sectionHeader}>Matching Recipes ({matchingRecipes.length})</Text>
+          {matchingRecipes.length > 0 ? (
+            <View style={styles.recipeGrid}>
+              {matchingRecipes.map(recipe => {
+                const missingList = recipe.ingredients.filter(ing => !globalIngredients.includes(ing));
+                return (
+                  <Link key={recipe.id} href="/recipe-view" asChild>
+                    <TouchableOpacity style={styles.recipeCard}>
+                      <Text style={styles.recipeName}>{recipe.name}</Text>
+                      <Text style={styles.recipeDetails}>
+                        Total Ingredients: {recipe.ingredients.length}  |  
+                        <Text style={{ color: missingList.length > 0 ? '#FF9500' : COLORS.textGreen, fontWeight: '600' }}>
+                          {' '}Missing: {missingList.length}
+                        </Text>
+                      </Text>
+                    </TouchableOpacity>
+                  </Link>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.noRecipesText}>No recipes match your ingredients filter setup.</Text>
+          )}
         </View>
 
       </ScrollView>
@@ -225,7 +287,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 40,
   },
-
   navBar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -241,14 +302,12 @@ const styles = StyleSheet.create({
     color: COLORS.textGreen,
     textDecorationLine: 'underline',
   },
-
   welcomeUser: {
     marginRight: 'auto',
     fontSize: 14,
     fontWeight: '500',
     color: COLORS.textDark,
   },
-
   suggestionsBox: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -273,5 +332,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLightGray,
     textAlign: 'center',
+  },
+  recipesContainer: {
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  recipeGrid: {
+    gap: 12,
+  },
+  recipeCard: {
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  recipeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textDark,
+    marginBottom: 4,
+  },
+  recipeDetails: {
+    fontSize: 13,
+    color: COLORS.textLightGray,
+  },
+  noRecipesText: {
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
 });

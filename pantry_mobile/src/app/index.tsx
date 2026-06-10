@@ -5,31 +5,13 @@ import { Link } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
+import { RECIPES_DATABASE } from '../constants/recipes';
 
 // Mock Ingredients
 const ALL_DATABASE_INGREDIENTS = [
   'Chicken Breast', 'Chicken Thighs', 'Spinach', 'Brown Rice', 'White Rice',
   'Garlic', 'Lemon', 'Olive Oil', 'Onions', 'Tomatoes', 'Black Beans',
   'Cheddar Cheese', 'Eggs', 'Avocado', 'Bell Peppers', 'Flour', 'Butter'
-];
-
-// Mock recipes
-const RECIPES_DATABASE = [
-  {
-    id: 1,
-    name: 'Garlic Chicken Thighs Curry',
-    ingredients: ['Chicken Thighs', 'Garlic', 'Onions', 'Tomatoes', 'Olive Oil', 'Bell Peppers'] 
-  },
-  {
-    id: 2,
-    name: 'Healthy Zesty Spinach Salad',
-    ingredients: ['Spinach', 'Lemon', 'Olive Oil', 'Avocado'] 
-  },
-  {
-    id: 3,
-    name: 'Avocado & Cheddar Omelette',
-    ingredients: ['Eggs', 'Avocado', 'Cheddar Cheese', 'Butter'] 
-  }
 ];
 
 export default function Page() {

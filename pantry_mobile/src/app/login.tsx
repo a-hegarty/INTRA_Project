@@ -43,14 +43,62 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.backgroundWhite, justifyContent: 'center' },
-  container: { padding: 32 },
-  title: { fontSize: 32, fontWeight: '700', color: COLORS.primaryGreen, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textLightGray, marginBottom: 32 },
-  formGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: COLORS.textDark, marginBottom: 8 },
-  input: { height: 50, borderWidth: 1, borderColor: COLORS.borderGray, borderRadius: 12, paddingHorizontal: 16, fontSize: 16, backgroundColor: '#FAFAFA' },
-  loginButton: { height: 52, backgroundColor: COLORS.primaryGreen, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 12, marginBottom: 24 },
-  loginButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  backLink: { color: COLORS.textGreen, fontSize: 14, fontWeight: '500', textAlign: 'center', textDecorationLine: 'underline' }
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.backgroundWhite,
+    justifyContent: 'center',
+  },
+  container: {
+    padding: 32,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.primaryGreen,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textLightGray,
+    marginBottom: 32,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textDark,
+    marginBottom: 8,
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  loginButton: {
+    height: 52,
+    backgroundColor: COLORS.primaryGreen,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 24,
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  backLink: {
+    color: COLORS.textGreen,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });

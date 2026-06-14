@@ -9,8 +9,8 @@ class User(models.Model):
         return self.username
     
 class IngredientCategory(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, default='')
+    id = models.AutoField(primary_key=True),
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
@@ -18,6 +18,7 @@ class IngredientCategory(models.Model):
 class Ingredient(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, default='')
+    category = models.ForeignKey(IngredientCategory, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

@@ -1,22 +1,59 @@
 import React from 'react';
 import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
 import { Link } from 'expo-router';
-// @ts-ignore
-import { COLORS } from '../../theme';
+// @ts-ignore 
+import { COLORS } from '../../theme'; 
 
-export default function RecipePage() {
+export default function RecipeViewPage() {
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Recipe Details</Text>
-      <Text style={styles.subtitle}>Delicious meals matched to your ingredients.</Text>
-      <Link href="/" style={styles.link}>⬅️ Back to Pantry</Link>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Link href="/" style={styles.backLink}>⬅️ Back to Pantry</Link>
+        
+        <Text style={styles.title}>Recipe Details Screen</Text>
+        
+        <View style={styles.placeholderBox}>
+          <Text style={styles.placeholderText}>
+            [Backend Data Integration Pending]{'\n'}
+          </Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: COLORS.backgroundWhite, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: '700', color: COLORS.primaryGreen, marginBottom: 8 },
-  subtitle: { fontSize: 16, color: COLORS.textLightGray, marginBottom: 24 },
-  link: { color: COLORS.textGreen, fontSize: 16, fontWeight: '600', textDecorationLine: 'underline' }
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.backgroundWhite,
+  },
+  container: {
+    padding: 24,
+  },
+  backLink: {
+    color: COLORS.textGreen,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.primaryGreen,
+    marginBottom: 24,
+  },
+  placeholderBox: {
+    padding: 20,
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    borderColor: COLORS.borderGray,
+    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 });

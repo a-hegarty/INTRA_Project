@@ -22,6 +22,13 @@ class Ingredient(models.Model):
     def __str__(self):
         return self.name
     
+class Equipment(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, default='')
+
+    def __str__(self):
+        return self.name
+    
 class Cuisine(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, default="")
@@ -46,13 +53,16 @@ class Tags(models.Model):
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, default='')
-    
+    calories = models.IntegerField()
+    portions = models.IntegerField()
     cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
     diet = models.ManyToManyField(Diet)
     tags = models.ManyToManyField(Tags)
     time = models.IntegerField()
+    equipment = models.ManyToManyField(Equipment)
     ingredients = models.ManyToManyField(Ingredient)
     instructions = models.TextField(default='')
+    photos = models.ImageField(default='image.jpg')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):

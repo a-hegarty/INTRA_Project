@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-} from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, TextInput} from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -98,9 +90,6 @@ export default function ProfilePage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Link href="/" style={styles.backLink}>
-          ⬅️ Back to Pantry
-        </Link>
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarPlaceholder}>

@@ -58,15 +58,8 @@ export default function Page() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* Navigation bar */}
-        <View style={styles.navBar}>
-          <Text style={styles.welcomeUser}>Hi, {username} </Text>
-          {isLoggedIn ? (
-            <Link href="/profile" style={styles.navLink}>Profile</Link>
-          ) : (
-            <Link href="/login" style={styles.navLink}>Login</Link>
-          )}
-        </View>
+        {/* Welcome Text Header */}
+        <Text style={styles.welcomeUser}>Welcome back, {username}</Text>
         
         {/* Main Title Section */}
         <Text style={styles.mainTitle}>Pantry</Text>
@@ -175,6 +168,15 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 24,
+    paddingBottom: 100,
+  },
+  welcomeUser: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textLightGray,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   mainTitle: {
     fontSize: FONTS.header.fontSize,
@@ -268,27 +270,6 @@ const styles = StyleSheet.create({
   slider: {
     width: '100%',
     height: 40,
-  },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 16,
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderGray,
-  },
-  navLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textGreen,
-    textDecorationLine: 'underline',
-  },
-  welcomeUser: {
-    marginRight: 'auto',
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textDark,
   },
   suggestionsBox: {
     backgroundColor: '#FFFFFF',

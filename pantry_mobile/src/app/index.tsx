@@ -139,10 +139,10 @@ export default function Page() {
                         <Text style={styles.recipeName} numberOfLines={1}>{recipe.name}</Text>
                         
                         <View style={styles.metricsRow}>
-                          <Text style={styles.metricText}> -- min</Text>
-                          <Text style={styles.metricText}> -- cal</Text>
-                          <Text style={styles.metricText}> --g pro</Text>
-                          <Text style={styles.metricText}> --g carb</Text>
+                          <Text style={styles.metricText}>⏱️ -- min</Text>
+                          <Text style={styles.metricText}>🔥 -- cal</Text>
+                          <Text style={styles.metricText}>💪 --g pro</Text>
+                          <Text style={styles.metricText}>🍞 --g carb</Text>
                         </View>
 
                         <Text style={styles.recipeDetails}>

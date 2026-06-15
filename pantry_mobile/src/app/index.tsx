@@ -7,7 +7,6 @@ import { COLORS, FONTS } from '../../theme';
 import { useAuth } from '../context/AuthContext';
 import { RECIPES_DATABASE } from '../constants/recipes';
 
-// Mock Ingredients
 const ALL_DATABASE_INGREDIENTS = [
   'Chicken Breast', 'Chicken Thighs', 'Spinach', 'Brown Rice', 'White Rice',
   'Garlic', 'Lemon', 'Olive Oil', 'Onions', 'Tomatoes', 'Black Beans',
@@ -26,7 +25,6 @@ export default function Page() {
     setGlobalMissingCount 
   } = useAuth();
 
-  // Filter dropdown suggestions based on user typing
   const filteredSuggestions = ALL_DATABASE_INGREDIENTS.filter(item =>
     item.toLowerCase().includes(searchQuery.toLowerCase()) && 
     !globalIngredients.includes(item)
@@ -58,15 +56,12 @@ export default function Page() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* Welcome Text Header */}
         <Text style={styles.welcomeUser}>Welcome back, {username}</Text>
         
-        {/* Main Title Section */}
         <Text style={styles.mainTitle}>Pantry</Text>
         <Text style={styles.subtitle}>What's in your kitchen?</Text>
         <Text style={styles.description}>Add your ingredients and we'll find healthy meals</Text>
 
-        {/* Search Bar Container */}
         <View style={styles.searchContainer}>
           <Text style={styles.labelText}>Search Ingredients</Text>
           <TextInput 
@@ -77,7 +72,6 @@ export default function Page() {
             onChangeText={setSearchQuery} 
           />
 
-          {/* Dynamic Search Suggestion Dropdown */}
           {searchQuery.length > 0 && (
             <View style={styles.suggestionsBox}>
               {filteredSuggestions.length > 0 ? (
@@ -93,7 +87,6 @@ export default function Page() {
           )}
         </View>
 
-        {/* Ingredients Section Container */}
         <View style={styles.ingredientsSection}>
           <Text style={styles.sectionHeader}>Your Ingredients ({globalIngredients.length})</Text>
           <View style={styles.pillContainer}>
@@ -108,7 +101,6 @@ export default function Page() {
           </View>
         </View>
 
-        {/* Missing Ingredients Slider Section */}
         <View style={styles.sliderSection}>
           <View style={styles.sliderHeaderRow}>
             <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
@@ -129,7 +121,6 @@ export default function Page() {
           />
         </View>
 
-        {/* Dynamic matching recipes section */}
         <View style={styles.recipesContainer}>
           <Text style={styles.sectionHeader}>Matching Recipes ({matchingRecipes.length})</Text>
           {matchingRecipes.length > 0 ? (
@@ -139,13 +130,28 @@ export default function Page() {
                 return (
                   <Link key={recipe.id} href="/recipe-view" asChild>
                     <TouchableOpacity style={styles.recipeCard}>
-                      <Text style={styles.recipeName}>{recipe.name}</Text>
-                      <Text style={styles.recipeDetails}>
-                        Total Ingredients: {recipe.ingredients.length}  |  
-                        <Text style={{ color: missingList.length > 0 ? '#FF9500' : COLORS.textGreen, fontWeight: '600' }}>
-                          {' '}Missing: {missingList.length}
+                      
+                      <View style={styles.recipeImagePlaceholder}>
+                        <Text style={styles.imageIcon}>🍳</Text>
+                      </View>
+
+                      <View style={styles.recipeMetaContainer}>
+                        <Text style={styles.recipeName} numberOfLines={1}>{recipe.name}</Text>
+                        
+                        <View style={styles.metricsRow}>
+                          <Text style={styles.metricText}> -- min</Text>
+                          <Text style={styles.metricText}> -- cal</Text>
+                          <Text style={styles.metricText}> --g pro</Text>
+                          <Text style={styles.metricText}> --g carb</Text>
+                        </View>
+
+                        <Text style={styles.recipeDetails}>
+                          <Text style={{ color: missingList.length > 0 ? '#FF9500' : COLORS.textGreen, fontWeight: '600' }}>
+                            Missing Ingredients: {missingList.length}
+                          </Text>
                         </Text>
-                      </Text>
+                      </View>
+
                     </TouchableOpacity>
                   </Link>
                 );
@@ -168,7 +174,7 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 24,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   welcomeUser: {
     fontSize: 14,
@@ -301,24 +307,64 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   recipeGrid: {
-    gap: 12,
+    gap: 14,
   },
   recipeCard: {
-    padding: 16,
+    flexDirection: 'row',
+    padding: 12,
     borderWidth: 1,
     borderColor: COLORS.borderGray,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    alignItems: 'center',
+  },
+  recipeImagePlaceholder: {
+    width: 80,
+    height: 80,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  imageIcon: {
+    fontSize: 28,
+  },
+  recipeMetaContainer: {
+    flex: 1,
+    paddingLeft: 14,
+    justifyContent: 'center',
   },
   recipeName: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: COLORS.textDark,
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  metricText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textLightGray,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
   recipeDetails: {
-    fontSize: 13,
-    color: COLORS.textLightGray,
+    fontSize: 12,
   },
   noRecipesText: {
     fontSize: 14,

@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useState } from 'react';
 
+export interface PantryIngredient {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  expiryDate: string | null;
+  addedDate: string;
+}
+
 interface AuthContextType {
   isLoggedIn: boolean;
   username: string;
@@ -23,8 +32,10 @@ interface AuthContextType {
   favoriteRecipeIds: number[];
   toggleFavoriteRecipe: (id: number) => void;
 
-  globalIngredients: string[];
-  setGlobalIngredients: React.Dispatch<React.SetStateAction<string[]>>;
+  globalIngredients: PantryIngredient[];
+  setGlobalIngredients: React.Dispatch<React.SetStateAction<PantryIngredient[]>>;
+  addIngredient: (ingredient: PantryIngredient) => void;
+  removeIngredient: (id: string) => void;
   globalMissingCount: number;
   setGlobalMissingCount: React.Dispatch<React.SetStateAction<number>>;
 }
@@ -46,8 +57,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [recommendationPriorities, setRecommendationPriorities] = useState<string[]>([]);
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<number[]>([]);
 
-  const [globalIngredients, setGlobalIngredients] = useState<string[]>([]);
+  const [globalIngredients, setGlobalIngredients] = useState<PantryIngredient[]>([]);
   const [globalMissingCount, setGlobalMissingCount] = useState<number>(0);
+
+  const addIngredient = (ingredient: PantryIngredient) => {
+    setGlobalIngredients((prev) => [...prev, ingredient]);
+  };
+
+  const removeIngredient = (id: string) => {
+    setGlobalIngredients((prev) => prev.filter((ing) => ing.id !== id));
+  };
 
   const login = (user: string) => {
     setIsLoggedIn(true);
@@ -112,6 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toggleFavoriteRecipe,
         globalIngredients,
         setGlobalIngredients,
+        addIngredient,
+        removeIngredient,
         globalMissingCount,
         setGlobalMissingCount,
       }}

@@ -1,23 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE_URL = 'http://127.0.0.1:8000';
-
-interface BackendRecipe {
-  id: number;
-  name: string;
-  time?: number;
-  instructions?: string;
-  ingredients: { id: number; name: string }[] | string[];
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-}
+import { API_BASE_URL, BackendRecipe } from '../constants/api';
 
 export default function Page() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +19,9 @@ export default function Page() {
     globalIngredients, 
     setGlobalIngredients,
     globalMissingCount,
-    setGlobalMissingCount 
+    setGlobalMissingCount,
+    favoriteRecipeIds,
+    toggleFavoriteRecipe,
   } = useAuth();
 
   useEffect(() => {
@@ -174,48 +165,66 @@ export default function Page() {
               {matchingRecipes.map(recipe => {
                 const recipeIngs = recipe.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name);
                 const missingList = recipeIngs.filter(ing => !globalIngredients.includes(ing));
+                const isFavorite = favoriteRecipeIds.includes(recipe.id);
                 
                 return (
-                  <Link 
-                    key={recipe.id} 
-                    href={{
-                      pathname: "/recipe-view",
-                      params: { 
-                        name: recipe.name,
-                        time: recipe.time || '40',
-                        instructions: recipe.instructions || '',
-                        ingredientsList: JSON.stringify(recipeIngs),
-                        calories: recipe.calories || '0',
-                        protein: recipe.protein || '0',
-                        carbs: recipe.carbs || '0'
-                      }
-                    }} 
-                    asChild
-                  >
-                    <TouchableOpacity style={styles.recipeCard}>
-                      
-                      <View style={styles.recipeImagePlaceholder}>
-                        <Text style={styles.imageIcon}>🍳</Text>
-                      </View>
+                  <View key={recipe.id} style={styles.recipeCard}>
+                    <Link 
+                      href={{
+                        pathname: "/recipe-view",
+                        params: { 
+                          id: String(recipe.id),
+                          name: recipe.name,
+                          time: recipe.time || '40',
+                          instructions: recipe.instructions || '',
+                          ingredientsList: JSON.stringify(recipeIngs),
+                          calories: recipe.calories || '0',
+                          protein: recipe.protein || '0',
+                          carbs: recipe.carbs || '0',
+                          image_url: recipe.image_url || '',
+                        }
+                      }} 
+                      asChild
+                    >
+                      <TouchableOpacity style={styles.recipeCardLink}>
+                        {recipe.image_url ? (
+                          <Image
+                            source={{ uri: recipe.image_url }}
+                            style={styles.recipeImage}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View style={styles.recipeImagePlaceholder}>
+                            <Text style={styles.imageIcon}>🍳</Text>
+                          </View>
+                        )}
 
-                      <View style={styles.recipeMetaContainer}>
-                        <Text style={styles.recipeName} numberOfLines={1}>{recipe.name}</Text>
-                        
-                        <View style={styles.metricsRow}>
-                          <Text style={styles.metricText}>⏱️ {recipe.time || '--'} min</Text>
-                          <Text style={styles.metricText}>🔥 {recipe.calories || '--'} cal</Text>
-                          <Text style={styles.metricText}>💪 {recipe.protein || '--'}g pro</Text>
-                        </View>
+                        <View style={styles.recipeMetaContainer}>
+                          <Text style={styles.recipeName} numberOfLines={1}>{recipe.name}</Text>
+                          
+                          <View style={styles.metricsRow}>
+                            <Text style={styles.metricText}>⏱️ {recipe.time || '--'} min</Text>
+                            <Text style={styles.metricText}>🔥 {recipe.calories || '--'} cal</Text>
+                            <Text style={styles.metricText}>💪 {recipe.protein || '--'}g pro</Text>
+                          </View>
 
-                        <Text style={styles.recipeDetails}>
-                          <Text style={{ color: missingList.length > 0 ? '#FF9500' : COLORS.textGreen, fontWeight: '600' }}>
-                            Missing Ingredients: {missingList.length}
+                          <Text style={styles.recipeDetails}>
+                            <Text style={{ color: missingList.length > 0 ? '#FF9500' : COLORS.textGreen, fontWeight: '600' }}>
+                              Missing Ingredients: {missingList.length}
+                            </Text>
                           </Text>
-                        </Text>
-                      </View>
+                        </View>
+                      </TouchableOpacity>
+                    </Link>
 
+                    <TouchableOpacity
+                      style={styles.favoriteButton}
+                      onPress={() => toggleFavoriteRecipe(recipe.id)}
+                      accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Text style={styles.favoriteIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
                     </TouchableOpacity>
-                  </Link>
+                  </View>
                 );
               })}
             </View>
@@ -379,6 +388,25 @@ const styles = StyleSheet.create({
     borderRadius: 16, 
     backgroundColor: '#FFFFFF', 
     alignItems: 'center' 
+  },
+  recipeCardLink: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recipeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  favoriteButton: {
+    paddingLeft: 10,
+    paddingVertical: 8,
+  },
+  favoriteIcon: {
+    fontSize: 22,
   },
   recipeImagePlaceholder: { 
     width: 80, 

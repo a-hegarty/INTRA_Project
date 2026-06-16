@@ -1,19 +1,25 @@
 import React from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 // @ts-ignore 
-import { COLORS } from '../../theme'; 
+import { COLORS } from '../../theme';
+import { useAuth } from '../context/AuthContext';
 
 export default function RecipeViewPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { favoriteRecipeIds, toggleFavoriteRecipe } = useAuth();
 
+  const recipeId = Number(params.id as string) || 0;
   const recipeName = params.name as string || 'Unknown Recipe';
   const cookTime = params.time as string || '40';
   const rawInstructions = params.instructions as string || 'No special cooking steps provided yet.';
   const calories = params.calories as string || '0';
   const protein = params.protein as string || '0';
   const carbs = params.carbs as string || '0';
+  const imageUrl = params.image_url as string || '';
+  const isFavorite = favoriteRecipeIds.includes(recipeId);
   
   let dynamicIngredients: string[] = [];
   try {
@@ -36,13 +42,32 @@ export default function RecipeViewPage() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>⬅️ Back to Pantry</Text>
         </TouchableOpacity>
+        {recipeId > 0 && (
+          <TouchableOpacity
+            style={styles.favoriteHeaderButton}
+            onPress={() => toggleFavoriteRecipe(recipeId)}
+          >
+            <Text style={styles.favoriteHeaderIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
+            <Text style={styles.favoriteHeaderText}>
+              {isFavorite ? 'Favorited' : 'Favorite'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
-        <View style={styles.heroImageContainer}>
-          <Text style={styles.heroIcon}>🍽️</Text>
-        </View>
+        {imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.heroImage}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={styles.heroImageContainer}>
+            <Text style={styles.heroIcon}>🍽️</Text>
+          </View>
+        )}
 
         <View style={styles.detailsContent}>
           
@@ -114,14 +139,15 @@ const styles = StyleSheet.create({
   },
   headerBar: { 
     height: 50, 
-    justifyContent: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20, 
     backgroundColor: COLORS.backgroundWhite, 
     borderBottomWidth: 1, 
     borderBottomColor: '#F0F0F0' 
   },
   backButton: { 
-    alignSelf: 'flex-start', 
     paddingVertical: 4 
   },
   backButtonText: { 
@@ -129,8 +155,29 @@ const styles = StyleSheet.create({
     fontSize: 15, 
     fontWeight: '600' 
   },
+  favoriteHeaderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  favoriteHeaderIcon: {
+    fontSize: 18,
+  },
+  favoriteHeaderText: {
+    color: COLORS.textGreen,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   scrollContainer: { 
     paddingBottom: 120 
+  },
+  heroImage: {
+    width: '100%',
+    height: 250,
+    borderBottomWidth: 1,
+    borderColor: '#E5E5E5',
   },
   heroImageContainer: { 
     width: '100%', 

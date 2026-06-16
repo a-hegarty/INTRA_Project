@@ -1,9 +1,10 @@
-import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, TextInput} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import Slider from '@react-native-community/slider';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
-import { RECIPES_DATABASE } from '../constants/recipes';
+import { API_BASE_URL, BackendRecipe } from '../constants/api';
 // @ts-ignore
 import { COLORS } from '../../theme';
 
@@ -28,6 +29,10 @@ const RECOMMENDATION_PRIORITIES = [
   'High Protein',
   'Family Friendly',
 ];
+
+function getIngredientNames(recipe: BackendRecipe): string[] {
+  return recipe.ingredients.map((ing) => (typeof ing === 'string' ? ing : ing.name));
+}
 
 function ToggleGrid({
   items,
@@ -77,10 +82,29 @@ export default function ProfilePage() {
     logout,
   } = useAuth();
   const router = useRouter();
+  const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(true);
+
+  useEffect(() => {
+    async function fetchRecipes() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/recipes/`);
+        if (response.ok) {
+          const data = await response.json();
+          setRecipesDatabase(data);
+        }
+      } catch (error) {
+        console.error('Error fetching recipes for profile:', error);
+      } finally {
+        setIsLoadingRecipes(false);
+      }
+    }
+    fetchRecipes();
+  }, []);
 
   const avatarInitial = (displayName || username || '?').charAt(0).toUpperCase();
-  const favoriteRecipes = RECIPES_DATABASE.filter((recipe) => favoriteRecipeIds.includes(recipe.id));
-  const availableToFavorite = RECIPES_DATABASE.filter((recipe) => !favoriteRecipeIds.includes(recipe.id));
+  const favoriteRecipes = recipesDatabase.filter((recipe) => favoriteRecipeIds.includes(recipe.id));
+  const availableToFavorite = recipesDatabase.filter((recipe) => !favoriteRecipeIds.includes(recipe.id));
 
   const handleLogout = async () => {
     await logout();
@@ -175,35 +199,73 @@ export default function ProfilePage() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Favorite Recipes</Text>
-          <Text style={styles.sectionSubtitle}>Save recipes you love for quick access.</Text>
+          <Text style={styles.sectionTitle}>Favorite Meals</Text>
+          <Text style={styles.sectionSubtitle}>Recipes you marked as favorites from the Pantry.</Text>
 
-          {favoriteRecipes.length > 0 ? (
+          {isLoadingRecipes ? (
+            <ActivityIndicator size="small" color={COLORS.primaryGreen} style={{ marginVertical: 16 }} />
+          ) : favoriteRecipes.length > 0 ? (
             <View style={styles.favoritesList}>
-              {favoriteRecipes.map((recipe) => (
-                <View key={recipe.id} style={styles.favoriteCard}>
-                  <View style={styles.favoriteInfo}>
-                    <Text style={styles.favoriteName}>{recipe.name}</Text>
-                    <Text style={styles.favoriteMeta}>
-                      {recipe.ingredients.length} ingredients
-                    </Text>
+              {favoriteRecipes.map((recipe) => {
+                const recipeIngs = getIngredientNames(recipe);
+                return (
+                  <View key={recipe.id} style={styles.favoriteCard}>
+                    <Link
+                      href={{
+                        pathname: '/recipe-view',
+                        params: {
+                          id: String(recipe.id),
+                          name: recipe.name,
+                          time: String(recipe.time || '40'),
+                          instructions: recipe.instructions || '',
+                          ingredientsList: JSON.stringify(recipeIngs),
+                          calories: String(recipe.calories || '0'),
+                          protein: String(recipe.protein || '0'),
+                          carbs: String(recipe.carbs || '0'),
+                          image_url: recipe.image_url || '',
+                        },
+                      }}
+                      asChild
+                    >
+                      <TouchableOpacity style={styles.favoriteCardLink}>
+                        {recipe.image_url ? (
+                          <Image
+                            source={{ uri: recipe.image_url }}
+                            style={styles.favoriteImage}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View style={styles.favoriteImagePlaceholder}>
+                            <Text style={styles.favoriteImageIcon}>🍽️</Text>
+                          </View>
+                        )}
+                        <View style={styles.favoriteInfo}>
+                          <Text style={styles.favoriteName}>{recipe.name}</Text>
+                          <Text style={styles.favoriteMeta}>
+                            {recipeIngs.length} ingredients · {recipe.time || '--'} min
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </Link>
+                    <TouchableOpacity
+                      style={styles.removeFavoriteBtn}
+                      onPress={() => toggleFavoriteRecipe(recipe.id)}
+                    >
+                      <Text style={styles.removeFavoriteText}>Remove</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    style={styles.removeFavoriteBtn}
-                    onPress={() => toggleFavoriteRecipe(recipe.id)}
-                  >
-                    <Text style={styles.removeFavoriteText}>Remove</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+                );
+              })}
             </View>
           ) : (
             <View style={styles.emptyFavorites}>
-              <Text style={styles.emptyFavoritesText}>No favorites yet — add one below.</Text>
+              <Text style={styles.emptyFavoritesText}>
+                No favorites yet — tap the heart on a recipe in the Pantry to save it here.
+              </Text>
             </View>
           )}
 
-          {availableToFavorite.length > 0 && (
+          {!isLoadingRecipes && availableToFavorite.length > 0 && (
             <>
               <Text style={styles.subsectionTitle}>Add a favorite</Text>
               <View style={styles.addFavoritesList}>
@@ -383,15 +445,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: COLORS.primaryGreen,
     borderRadius: 12,
     backgroundColor: '#F4FAF6',
   },
+  favoriteCardLink: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  favoriteImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  favoriteImagePlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favoriteImageIcon: {
+    fontSize: 24,
+  },
   favoriteInfo: {
     flex: 1,
-    marginRight: 12,
   },
   favoriteName: {
     fontSize: 15,
@@ -428,6 +513,7 @@ const styles = StyleSheet.create({
   emptyFavoritesText: {
     fontSize: 14,
     color: COLORS.textLightGray,
+    textAlign: 'center',
   },
   addFavoritesList: {
     gap: 8,

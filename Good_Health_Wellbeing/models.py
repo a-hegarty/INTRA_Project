@@ -57,7 +57,7 @@ class Recipe(models.Model):
     #equipment = models.ManyToManyField(Equipment)
     ingredients = models.ManyToManyField(Ingredient)
     instructions = models.TextField(default='')
-    #photos = models.ImageField(default='image.jpg')
+    image = models.ImageField(upload_to='recipes/', blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):

@@ -38,7 +38,10 @@ def api_recipes(request):
             'name': recipe.name,
             'time': recipe.time,
             'instructions': recipe.instructions,
-            'ingredients': ingredient_names  
+            'ingredients': ingredient_names,
+            'calories': recipe.calories,
+            'protein': recipe.protein,
+            'carbs': recipe.carbs
         })
         
     return JsonResponse(recipes_list, safe=False)

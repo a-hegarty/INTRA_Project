@@ -8,12 +8,13 @@ export default function RecipeViewPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // Extract variables with defaults for unpopulated fields
   const recipeName = params.name as string || 'Unknown Recipe';
   const cookTime = params.time as string || '40';
   const rawInstructions = params.instructions as string || 'No special cooking steps provided yet.';
+  const calories = params.calories as string || '0';
+  const protein = params.protein as string || '0';
+  const carbs = params.carbs as string || '0';
   
-  // Parse incoming array parameters cleanly
   let dynamicIngredients: string[] = [];
   try {
     if (params.ingredientsList) {
@@ -23,7 +24,6 @@ export default function RecipeViewPage() {
     dynamicIngredients = ['Error parsing ingredients'];
   }
 
-  // Split Django's TextField onto clean string arrays for your list layout block
   const directionsArray = rawInstructions
     .split('\n')
     .map(step => step.trim())
@@ -54,15 +54,15 @@ export default function RecipeViewPage() {
             </View>
             <View style={styles.metricCard}>
               <Text style={styles.metricEmoji}>🔥</Text>
-              <Text style={styles.metricValue}>-- cal</Text>
+              <Text style={styles.metricValue}>{calories} cal</Text>
             </View>
             <View style={styles.metricCard}>
               <Text style={styles.metricEmoji}>💪</Text>
-              <Text style={styles.metricValue}>--g pro</Text>
+              <Text style={styles.metricValue}>{protein}g pro</Text>
             </View>
             <View style={styles.metricCard}>
               <Text style={styles.metricEmoji}>🍞</Text>
-              <Text style={styles.metricValue}>--g carb</Text>
+              <Text style={styles.metricValue}>{carbs}g carb</Text>
             </View>
           </View>
 

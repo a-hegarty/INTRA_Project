@@ -6,7 +6,6 @@ import { Link } from 'expo-router';
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
 
-// Local Django development server URL
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 interface BackendRecipe {
@@ -15,6 +14,9 @@ interface BackendRecipe {
   time?: number;
   instructions?: string;
   ingredients: { id: number; name: string }[] | string[];
+  calories?: number;
+  protein?: number;
+  carbs?: number;
 }
 
 export default function Page() {
@@ -31,7 +33,6 @@ export default function Page() {
     setGlobalMissingCount 
   } = useAuth();
 
-  // Fetch ingredients and recipes directly from your local Django API
   useEffect(() => {
     async function fetchData() {
       try {
@@ -42,7 +43,6 @@ export default function Page() {
 
         if (ingResponse.ok) {
           const ingData = await ingResponse.json();
-          // Maps either array of strings or list of objects from models.Ingredient
           setAllDatabaseIngredients(ingData.map((i: any) => typeof i === 'string' ? i : i.name));
         }
         
@@ -73,7 +73,6 @@ export default function Page() {
     setGlobalIngredients(globalIngredients.filter(item => item !== name));
   };
 
-  // Process the list dynamically against ingredients array structures
   const matchingRecipes = recipesDatabase.filter(recipe => {
     const recipeIngs: string[] = recipe.ingredients.map((ing: any) => 
       typeof ing === 'string' ? ing : ing.name
@@ -185,7 +184,10 @@ export default function Page() {
                         name: recipe.name,
                         time: recipe.time || '40',
                         instructions: recipe.instructions || '',
-                        ingredientsList: JSON.stringify(recipeIngs)
+                        ingredientsList: JSON.stringify(recipeIngs),
+                        calories: recipe.calories || '0',
+                        protein: recipe.protein || '0',
+                        carbs: recipe.carbs || '0'
                       }
                     }} 
                     asChild
@@ -201,8 +203,8 @@ export default function Page() {
                         
                         <View style={styles.metricsRow}>
                           <Text style={styles.metricText}>⏱️ {recipe.time || '--'} min</Text>
-                          <Text style={styles.metricText}>🔥 -- cal</Text>
-                          <Text style={styles.metricText}>💪 --g pro</Text>
+                          <Text style={styles.metricText}>🔥 {recipe.calories || '--'} cal</Text>
+                          <Text style={styles.metricText}>💪 {recipe.protein || '--'}g pro</Text>
                         </View>
 
                         <Text style={styles.recipeDetails}>

@@ -46,7 +46,9 @@ class Tags(models.Model):
 class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, default='')
-    #calories = models.IntegerField()
+    calories = models.IntegerField(default=0)
+    protein = models.IntegerField(default=0)
+    carbs = models.IntegerField(default=0)
     #portions = models.IntegerField()
     cuisine = models.ForeignKey(Cuisine, on_delete=models.CASCADE)
     diet = models.ManyToManyField(Diet)

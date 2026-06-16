@@ -1,23 +1,29 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
-import { RECIPES_DATABASE } from '../constants/recipes';
 
-const ALL_DATABASE_INGREDIENTS = [
-  'Chicken Breast', 'Chicken Thighs', 'Spinach', 'Brown Rice', 'White Rice',
-  'Garlic', 'Lemon', 'Olive Oil', 'Onions', 'Tomatoes', 'Black Beans',
-  'Cheddar Cheese', 'Eggs', 'Avocado', 'Bell Peppers', 'Flour', 'Butter'
-];
+// Local Django development server URL
+const API_BASE_URL = 'http://127.0.0.1:8000';
+
+interface BackendRecipe {
+  id: number;
+  name: string;
+  time?: number;
+  instructions?: string;
+  ingredients: { id: number; name: string }[] | string[];
+}
 
 export default function Page() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [allDatabaseIngredients, setAllDatabaseIngredients] = useState<string[]>([]);
+  const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const { 
-    isLoggedIn, 
     username, 
     globalIngredients, 
     setGlobalIngredients,
@@ -25,7 +31,35 @@ export default function Page() {
     setGlobalMissingCount 
   } = useAuth();
 
-  const filteredSuggestions = ALL_DATABASE_INGREDIENTS.filter(item =>
+  // Fetch ingredients and recipes directly from your local Django API
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [ingResponse, recipeResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/ingredients/`),
+          fetch(`${API_BASE_URL}/recipes/`)
+        ]);
+
+        if (ingResponse.ok) {
+          const ingData = await ingResponse.json();
+          // Maps either array of strings or list of objects from models.Ingredient
+          setAllDatabaseIngredients(ingData.map((i: any) => typeof i === 'string' ? i : i.name));
+        }
+        
+        if (recipeResponse.ok) {
+          const recipeData = await recipeResponse.json();
+          setRecipesDatabase(recipeData);
+        }
+      } catch (error) {
+        console.error("Error fetching data from Django backend:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const filteredSuggestions = allDatabaseIngredients.filter(item =>
     item.toLowerCase().includes(searchQuery.toLowerCase()) && 
     !globalIngredients.includes(item)
   );
@@ -39,18 +73,31 @@ export default function Page() {
     setGlobalIngredients(globalIngredients.filter(item => item !== name));
   };
 
-  const matchingRecipes = RECIPES_DATABASE.filter(recipe => {
-    const matchingCount = recipe.ingredients.filter(
+  // Process the list dynamically against ingredients array structures
+  const matchingRecipes = recipesDatabase.filter(recipe => {
+    const recipeIngs: string[] = recipe.ingredients.map((ing: any) => 
+      typeof ing === 'string' ? ing : ing.name
+    );
+    
+    const matchingCount = recipeIngs.filter(
       ing => globalIngredients.includes(ing)
     ).length;
 
-    const missingForThisRecipe = recipe.ingredients.length - matchingCount;
-
+    const missingForThisRecipe = recipeIngs.length - matchingCount;
     const hasAtLeastOneMatch = matchingCount > 0;
     const passesSliderThreshold = missingForThisRecipe <= globalMissingCount;
 
     return hasAtLeastOneMatch && passesSliderThreshold;
   });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primaryGreen} />
+        <Text style={{ marginTop: 12, color: COLORS.textLightGray }}>Connecting to Django Database...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -126,9 +173,23 @@ export default function Page() {
           {matchingRecipes.length > 0 ? (
             <View style={styles.recipeGrid}>
               {matchingRecipes.map(recipe => {
-                const missingList = recipe.ingredients.filter(ing => !globalIngredients.includes(ing));
+                const recipeIngs = recipe.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name);
+                const missingList = recipeIngs.filter(ing => !globalIngredients.includes(ing));
+                
                 return (
-                  <Link key={recipe.id} href="/recipe-view" asChild>
+                  <Link 
+                    key={recipe.id} 
+                    href={{
+                      pathname: "/recipe-view",
+                      params: { 
+                        name: recipe.name,
+                        time: recipe.time || '40',
+                        instructions: recipe.instructions || '',
+                        ingredientsList: JSON.stringify(recipeIngs)
+                      }
+                    }} 
+                    asChild
+                  >
                     <TouchableOpacity style={styles.recipeCard}>
                       
                       <View style={styles.recipeImagePlaceholder}>
@@ -139,10 +200,9 @@ export default function Page() {
                         <Text style={styles.recipeName} numberOfLines={1}>{recipe.name}</Text>
                         
                         <View style={styles.metricsRow}>
-                          <Text style={styles.metricText}>⏱️ -- min</Text>
+                          <Text style={styles.metricText}>⏱️ {recipe.time || '--'} min</Text>
                           <Text style={styles.metricText}>🔥 -- cal</Text>
                           <Text style={styles.metricText}>💪 --g pro</Text>
-                          <Text style={styles.metricText}>🍞 --g carb</Text>
                         </View>
 
                         <Text style={styles.recipeDetails}>
@@ -168,208 +228,202 @@ export default function Page() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.backgroundWhite,
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: COLORS.backgroundWhite 
   },
-  container: {
-    padding: 24,
-    paddingBottom: 120,
+  container: { 
+    padding: 24, 
+    paddingBottom: 120 
   },
-  welcomeUser: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textLightGray,
-    marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  welcomeUser: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: COLORS.textLightGray, 
+    marginBottom: 16, 
+    textTransform: 'uppercase', 
+    letterSpacing: 0.5 
   },
-  mainTitle: {
-    fontSize: FONTS.header.fontSize,
-    fontWeight: FONTS.header.fontWeight as any,
-    color: COLORS.primaryGreen,
-    marginBottom: 8,
+  mainTitle: { 
+    fontSize: FONTS.header.fontSize, 
+    fontWeight: FONTS.header.fontWeight as any, 
+    color: COLORS.primaryGreen, 
+    marginBottom: 8 
   },
-  subtitle: {
-    fontSize: FONTS.subheader.fontSize,
-    fontWeight: FONTS.subheader.fontWeight as any,
-    color: COLORS.textGreen,
-    marginBottom: 4,
+  subtitle: { 
+    fontSize: FONTS.subheader.fontSize, 
+    fontWeight: FONTS.subheader.fontWeight as any, 
+    color: COLORS.textGreen, 
+    marginBottom: 4 
   },
-  description: {
-    fontSize: FONTS.body.fontSize,
-    fontWeight: FONTS.body.fontWeight as any,
-    color: COLORS.textLightGray,
-    marginBottom: 24,
+  description: { 
+    fontSize: FONTS.body.fontSize, 
+    fontWeight: FONTS.body.fontWeight as any, 
+    color: COLORS.textLightGray, 
+    marginBottom: 24 
   },
-  searchContainer: {
-    marginBottom: 28,
+  searchContainer: { 
+    marginBottom: 28 
   },
-  labelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textDark,
-    marginBottom: 8,
+  labelText: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.textDark, 
+    marginBottom: 8 
   },
-  searchBar: {
-    height: 50,
-    borderColor: COLORS.borderGray,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: '#FAFAFA',
+  searchBar: { 
+    height: 50, 
+    borderColor: COLORS.borderGray, 
+    borderWidth: 1, 
+    borderRadius: 12, 
+    paddingHorizontal: 16, 
+    fontSize: 16, 
+    backgroundColor: '#FAFAFA' 
   },
-  ingredientsSection: {
-    marginBottom: 32,
+  ingredientsSection: { 
+    marginBottom: 32 
   },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textDark,
-    marginBottom: 12,
+  sectionHeader: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: COLORS.textDark, 
+    marginBottom: 12 
   },
-  pillContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  pillContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
   },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accentGreen,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+  pill: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: COLORS.accentGreen, 
+    paddingHorizontal: 14, 
+    paddingVertical: 8, 
+    borderRadius: 20 
   },
-  pillText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textGreen,
-    marginRight: 6,
+  pillText: { 
+    fontSize: 14, 
+    fontWeight: '500', 
+    color: COLORS.textGreen, 
+    marginRight: 6 
   },
-  pillClose: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textGreen,
-    marginTop: -2,
+  pillClose: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.textGreen, 
+    marginTop: -2 
   },
-  sliderSection: {
-    marginBottom: 24,
+  sliderSection: { 
+    marginBottom: 24 
   },
-  sliderHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  sliderHeaderRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center' 
   },
-  sliderValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.primaryGreen,
+  sliderValue: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    color: COLORS.primaryGreen 
   },
-  sliderSubtitle: {
-    fontSize: 13,
-    color: COLORS.textLightGray,
-    marginTop: -8,
-    marginBottom: 16,
+  sliderSubtitle: { 
+    fontSize: 13, 
+    color: COLORS.textLightGray, 
+    marginTop: -8, 
+    marginBottom: 16 
   },
-  slider: {
-    width: '100%',
-    height: 40,
+  slider: { 
+    width: '100%', 
+    height: 40 
   },
-  suggestionsBox: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: COLORS.borderGray,
-    borderRadius: 12,
-    marginTop: 4,
-    maxHeight: 180,
-    overflow: 'hidden',
+  suggestionsBox: { 
+    backgroundColor: '#FFFFFF', 
+    borderWidth: 1, 
+    borderColor: COLORS.borderGray, 
+    borderRadius: 12, 
+    marginTop: 4, 
+    maxHeight: 180, 
+    overflow: 'hidden' 
   },
-  suggestionItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+  suggestionItem: { 
+    padding: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#F5F5F5' 
   },
-  suggestionText: {
-    fontSize: 14,
-    color: COLORS.textDark,
-    fontWeight: '500',
+  suggestionText: { 
+    fontSize: 14, 
+    color: COLORS.textDark, 
+    fontWeight: '500' 
   },
-  noResultText: {
-    padding: 12,
-    fontSize: 14,
-    color: COLORS.textLightGray,
-    textAlign: 'center',
+  noResultText: { 
+    padding: 12, 
+    fontSize: 14, 
+    color: COLORS.textLightGray, 
+    textAlign: 'center' 
   },
-  recipesContainer: {
-    marginTop: 8,
-    marginBottom: 40,
+  recipesContainer: { 
+    marginTop: 8, 
+    marginBottom: 40 
   },
-  recipeGrid: {
-    gap: 14,
+  recipeGrid: { 
+    gap: 14 
   },
-  recipeCard: {
-    flexDirection: 'row',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.borderGray,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    alignItems: 'center',
+  recipeCard: { 
+    flexDirection: 'row', 
+    padding: 12, 
+    borderWidth: 1, 
+    borderColor: COLORS.borderGray, 
+    borderRadius: 16, 
+    backgroundColor: '#FFFFFF', 
+    alignItems: 'center' 
   },
-  recipeImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    backgroundColor: '#F0F0F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+  recipeImagePlaceholder: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 12, 
+    backgroundColor: '#F0F0F0', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E5E5' 
   },
-  imageIcon: {
-    fontSize: 28,
+  imageIcon: { 
+    fontSize: 28 
   },
-  recipeMetaContainer: {
-    flex: 1,
-    paddingLeft: 14,
-    justifyContent: 'center',
+  recipeMetaContainer: { 
+    flex: 1, 
+    paddingLeft: 14, 
+    justifyContent: 'center' 
   },
-  recipeName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textDark,
-    marginBottom: 6,
+  recipeName: { 
+    fontSize: 16, 
+    fontWeight: '700', 
+    color: COLORS.textDark, 
+    marginBottom: 6 
   },
-  metricsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 6,
+  metricsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8, 
+    marginBottom: 6 
   },
-  metricText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: COLORS.textLightGray,
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    overflow: 'hidden',
+  metricText: { 
+    fontSize: 11, 
+    fontWeight: '500', 
+    color: COLORS.textLightGray, 
+    backgroundColor: '#F5F5F5', 
+    paddingHorizontal: 6, 
+    paddingVertical: 3, 
+    borderRadius: 6 
   },
-  recipeDetails: {
-    fontSize: 12,
+  recipeDetails: { 
+    fontSize: 12 
   },
-  noRecipesText: {
-    fontSize: 14,
-    color: COLORS.textLightGray,
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
+  noRecipesText: { 
+    fontSize: 14, 
+    color: COLORS.textLightGray, 
+    fontStyle: 'italic', 
+    marginTop: 4 
+  }
 });

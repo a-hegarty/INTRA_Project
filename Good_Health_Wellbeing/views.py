@@ -21,3 +21,24 @@ def search(request):
 
 def profile(request):
     return render (request, "profile.html")
+
+def api_ingredients(request):
+    ingredients = list(Ingredient.objects.values('id', 'name'))
+    return JsonResponse(ingredients, safe=False)
+
+def api_recipes(request):
+    recipes_queryset = Recipe.objects.all().prefetch_related('ingredients')
+    recipes_list = []
+    
+    for recipe in recipes_queryset:
+        ingredient_names = [ing.name for ing in recipe.ingredients.all()]
+        
+        recipes_list.append({
+            'id': recipe.id,
+            'name': recipe.name,
+            'time': recipe.time,
+            'instructions': recipe.instructions,
+            'ingredients': ingredient_names  
+        })
+        
+    return JsonResponse(recipes_list, safe=False)

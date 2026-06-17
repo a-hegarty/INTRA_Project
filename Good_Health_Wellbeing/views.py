@@ -28,6 +28,8 @@ def api_ingredients(request):
 
 def _serialize_recipe(recipe, request):
     ingredient_names = [ing.name for ing in recipe.ingredients.all()]
+    diet_names = [d.name for d in recipe.diet.all()]
+    tag_names = [t.name for t in recipe.tags.all()]
     image_url = request.build_absolute_uri(recipe.image.url) if recipe.image else None
     return {
         'id': recipe.id,
@@ -35,6 +37,8 @@ def _serialize_recipe(recipe, request):
         'time': recipe.time,
         'instructions': recipe.instructions,
         'ingredients': ingredient_names,
+        'diets': diet_names,
+        'tags': tag_names,
         'calories': recipe.calories,
         'protein': recipe.protein,
         'carbs': recipe.carbs,
@@ -43,6 +47,6 @@ def _serialize_recipe(recipe, request):
 
 
 def api_recipes(request):
-    recipes_queryset = Recipe.objects.all().prefetch_related('ingredients')
+    recipes_queryset = Recipe.objects.all().prefetch_related('ingredients', 'diet', 'tags')
     recipes_list = [_serialize_recipe(recipe, request) for recipe in recipes_queryset]
     return JsonResponse(recipes_list, safe=False)

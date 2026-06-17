@@ -13,6 +13,7 @@ export default function Page() {
   const [allDatabaseIngredients, setAllDatabaseIngredients] = useState<string[]>([]);
   const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const { 
     username, 
@@ -22,6 +23,7 @@ export default function Page() {
     setGlobalMissingCount,
     favoriteRecipeIds,
     toggleFavoriteRecipe,
+    dietaryRestrictions,
   } = useAuth();
 
   useEffect(() => {
@@ -50,6 +52,16 @@ export default function Page() {
     fetchData();
   }, []);
 
+  const uniqueTags = Array.from(
+    new Set(recipesDatabase.flatMap(recipe => recipe.tags || []))
+  );
+
+  const toggleTagSelection = (tagName: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tagName) ? prev.filter(t => t !== tagName) : [...prev, tagName]
+    );
+  };
+
   const filteredSuggestions = allDatabaseIngredients.filter(item =>
     item.toLowerCase().includes(searchQuery.toLowerCase()) && 
     !globalIngredients.includes(item)
@@ -65,6 +77,18 @@ export default function Page() {
   };
 
   const matchingRecipes = recipesDatabase.filter(recipe => {
+    const recipeDiets = recipe.diets || [];
+    const satisfiesProfileDiets = dietaryRestrictions.every(diet =>
+      recipeDiets.some(rd => rd.toLowerCase() === diet.toLowerCase())
+    );
+    if (!satisfiesProfileDiets) return false;
+
+    const recipeTags = recipe.tags || [];
+    const satisfiesSelectedTags = selectedTags.every(tag =>
+      recipeTags.includes(tag)
+    );
+    if (!satisfiesSelectedTags) return false;
+
     const recipeIngs: string[] = recipe.ingredients.map((ing: any) => 
       typeof ing === 'string' ? ing : ing.name
     );
@@ -138,6 +162,28 @@ export default function Page() {
           </View>
         </View>
 
+        {uniqueTags.length > 0 && (
+          <View style={styles.tagsSection}>
+            <Text style={styles.sectionHeader}>Filter by Tags</Text>
+            <View style={styles.pillContainer}>
+              {uniqueTags.map((tag, index) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.tagPill, isSelected && styles.tagPillSelected]}
+                    onPress={() => toggleTagSelection(tag)}
+                  >
+                    <Text style={[styles.tagPillText, isSelected && styles.tagPillTextSelected]}>
+                      {tag}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         <View style={styles.sliderSection}>
           <View style={styles.sliderHeaderRow}>
             <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
@@ -159,7 +205,14 @@ export default function Page() {
         </View>
 
         <View style={styles.recipesContainer}>
-          <Text style={styles.sectionHeader}>Matching Recipes ({matchingRecipes.length})</Text>
+          <View style={styles.recipesHeaderRow}>
+            <Text style={styles.sectionHeader}>Matching Recipes ({matchingRecipes.length})</Text>
+            {dietaryRestrictions.length > 0 && (
+              <Text style={styles.dietLabel}>
+                Filtered for: {dietaryRestrictions.join(', ')}
+              </Text>
+            )}
+          </View>
           {matchingRecipes.length > 0 ? (
             <View style={styles.recipeGrid}>
               {matchingRecipes.map(recipe => {
@@ -292,7 +345,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA' 
   },
   ingredientsSection: { 
-    marginBottom: 32 
+    marginBottom: 24 
+  },
+  tagsSection: {
+    marginBottom: 32
+  },
+  tagPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+  },
+  tagPillSelected: {
+    backgroundColor: COLORS.primaryGreen,
+    borderColor: COLORS.primaryGreen,
+  },
+  tagPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.textDark,
+  },
+  tagPillTextSelected: {
+    color: '#FFFFFF',
   },
   sectionHeader: { 
     fontSize: 18, 
@@ -376,6 +452,20 @@ const styles = StyleSheet.create({
   recipesContainer: { 
     marginTop: 8, 
     marginBottom: 40 
+  },
+  recipesHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  dietLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF9500',
+    textTransform: 'uppercase',
   },
   recipeGrid: { 
     gap: 14 

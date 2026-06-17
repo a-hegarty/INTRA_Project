@@ -10,4 +10,6 @@ export interface BackendRecipe {
   protein?: number;
   carbs?: number;
   image_url?: string | null;
+  diets?: string[];
+  tags?: string[];
 }

@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import Slider from '@react-native-community/slider';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 // @ts-ignore 
 import { COLORS, FONTS } from '../../theme'; 
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, BackendRecipe } from '../constants/api';
 
 export default function Page() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [allDatabaseIngredients, setAllDatabaseIngredients] = useState<string[]>([]);
   const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
@@ -122,6 +123,10 @@ export default function Page() {
         <Text style={styles.mainTitle}>Pantry</Text>
         <Text style={styles.subtitle}>What's in your kitchen?</Text>
         <Text style={styles.description}>Add your ingredients and we'll find healthy meals</Text>
+
+        <TouchableOpacity style={styles.createRecipeBtn} onPress={() => router.push('/create-recipe' as any)}>
+          <Text style={styles.createRecipeBtnText}>+ Create Recipe</Text>
+        </TouchableOpacity>
 
         <View style={styles.searchContainer}>
           <Text style={styles.labelText}>Search Ingredients</Text>
@@ -540,10 +545,23 @@ const styles = StyleSheet.create({
   recipeDetails: { 
     fontSize: 12 
   },
-  noRecipesText: { 
-    fontSize: 14, 
-    color: COLORS.textLightGray, 
-    fontStyle: 'italic', 
-    marginTop: 4 
-  }
+  noRecipesText: {
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  createRecipeBtn: {
+    borderWidth: 1.5,
+    borderColor: COLORS.primaryGreen,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  createRecipeBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.primaryGreen,
+  },
 });

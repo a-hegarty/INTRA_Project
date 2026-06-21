@@ -7,5 +7,6 @@ urlpatterns = [
     path('search', views.search, name="search"),
     path('ingredients/', views.api_ingredients, name="api_ingredients"),
     path('recipes/', views.api_recipes, name="api_recipes"),
+    path('recipes/create/', views.api_create_recipe, name="api_create_recipe"),
     # path('view_recipe', views.view_recipe, name="view_recipe"),
 ]

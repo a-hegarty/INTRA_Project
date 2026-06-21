@@ -1,6 +1,8 @@
+import json
 from django.shortcuts import render
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from .forms import *
 from .models import *
 
@@ -50,3 +52,77 @@ def api_recipes(request):
     recipes_queryset = Recipe.objects.all().prefetch_related('ingredients', 'diet', 'tags')
     recipes_list = [_serialize_recipe(recipe, request) for recipe in recipes_queryset]
     return JsonResponse(recipes_list, safe=False)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_create_recipe(request):
+    content_type = request.content_type or ''
+    if 'multipart/form-data' in content_type:
+        data = request.POST
+        get = lambda key, default='': data.get(key, default)
+        ingredient_names = json.loads(data.get('ingredients', '[]'))
+        diet_names = json.loads(data.get('diets', '[]'))
+        tag_names = json.loads(data.get('tags', '[]'))
+        image_file = request.FILES.get('image')
+    else:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        get = lambda key, default='': data.get(key, default)
+        ingredient_names = data.get('ingredients', [])
+        diet_names = data.get('diets', [])
+        tag_names = data.get('tags', [])
+        image_file = None
+
+    name = get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'name is required'}, status=400)
+
+    try:
+        time_val = int(get('time', 0) or 0)
+        calories = int(get('calories', 0) or 0)
+        protein = int(get('protein', 0) or 0)
+        carbs = int(get('carbs', 0) or 0)
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'time, calories, protein, carbs must be numbers'}, status=400)
+
+    instructions = get('instructions', '').strip()
+    cuisine_name = (get('cuisine', 'General') or 'General').strip()
+    username = (get('username', 'anonymoususer') or 'anonymoususer').strip()
+
+    author, _ = User.objects.get_or_create(username=username)
+    cuisine, _ = Cuisine.objects.get_or_create(name=cuisine_name)
+
+    recipe = Recipe.objects.create(
+        name=name,
+        time=time_val,
+        calories=calories,
+        protein=protein,
+        carbs=carbs,
+        instructions=instructions,
+        cuisine=cuisine,
+        author=author,
+        **({"image": image_file} if image_file else {}),
+    )
+
+    for ing_name in ingredient_names:
+        ing_name = ing_name.strip()
+        if ing_name:
+            ingredient, _ = Ingredient.objects.get_or_create(name=ing_name)
+            recipe.ingredients.add(ingredient)
+
+    for diet_name in diet_names:
+        diet_name = diet_name.strip()
+        if diet_name:
+            diet, _ = Diet.objects.get_or_create(name=diet_name)
+            recipe.diet.add(diet)
+
+    for tag_name in tag_names:
+        tag_name = tag_name.strip()
+        if tag_name:
+            tag, _ = Tags.objects.get_or_create(name=tag_name)
+            recipe.tags.add(tag)
+
+    return JsonResponse(_serialize_recipe(recipe, request), status=201)

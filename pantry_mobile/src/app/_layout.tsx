@@ -1,7 +1,7 @@
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { AuthProvider } from '../context/AuthContext';
-import { ChefHat, User } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 // @ts-ignore
 import { COLORS } from '../../theme';
 
@@ -30,10 +30,10 @@ export default function RootLayout() {
             onPress={() => router.replace('/')}
             activeOpacity={0.8}
           >
-            <ChefHat 
-              color={isPantryActive ? '#FFFFFF' : '#B2DFDB'} 
-              size={26} 
-              strokeWidth={isPantryActive ? 2.5 : 1.8}
+            <Ionicons
+              name={isPantryActive ? 'restaurant' : 'restaurant-outline'}
+              color={isPantryActive ? '#FFFFFF' : '#B2DFDB'}
+              size={26}
             />
             <Text style={[styles.tabLabel, isPantryActive && styles.activeTabLabel]}>
               Pantry
@@ -46,10 +46,10 @@ export default function RootLayout() {
             onPress={() => router.replace('/profile')}
             activeOpacity={0.8}
           >
-            <User 
-              color={isProfileActive ? '#FFFFFF' : '#B2DFDB'} 
-              size={26} 
-              strokeWidth={isProfileActive ? 2.5 : 1.8}
+            <Ionicons
+              name={isProfileActive ? 'person' : 'person-outline'}
+              color={isProfileActive ? '#FFFFFF' : '#B2DFDB'}
+              size={26}
             />
             <Text style={[styles.tabLabel, isProfileActive && styles.activeTabLabel]}>
               Profile

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
@@ -8,12 +8,24 @@ import { COLORS, FONTS } from '../../theme';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, BackendRecipe } from '../constants/api';
 
+type IngredientDetail = {
+  name: string;
+  quantity: string;
+  measurement: string;
+  expiryDate: string;
+};
+
+const MEASUREMENT_OPTIONS = ['pcs', 'g', 'kg', 'ml', 'L', 'cup', 'tbsp', 'tsp', 'oz', 'lb'];
+
 export default function Page() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allDatabaseIngredients, setAllDatabaseIngredients] = useState<string[]>([]);
   const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [ingredientDetails, setIngredientDetails] = useState<IngredientDetail[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [form, setForm] = useState({ name: '', quantity: '', measurement: 'pcs', expiryDate: '' });
   
   const { 
     username, 
@@ -69,11 +81,22 @@ export default function Page() {
 
   const addIngredient = (name: string) => {
     setGlobalIngredients([...globalIngredients, name]);
+    setIngredientDetails(prev => [...prev, { name, quantity: '', measurement: 'pcs', expiryDate: '' }]);
     setSearchQuery('');
+  };
+
+  const saveIngredientFromModal = () => {
+    const trimmed = form.name.trim();
+    if (!trimmed || globalIngredients.includes(trimmed)) return;
+    setGlobalIngredients([...globalIngredients, trimmed]);
+    setIngredientDetails(prev => [...prev, { ...form, name: trimmed }]);
+    setForm({ name: '', quantity: '', measurement: 'pcs', expiryDate: '' });
+    setModalVisible(false);
   };
 
   const removeIngredient = (name: string) => {
     setGlobalIngredients(globalIngredients.filter(item => item !== name));
+    setIngredientDetails(prev => prev.filter(i => i.name !== name));
   };
 
   const matchingRecipes = recipesDatabase.filter(recipe => {
@@ -115,6 +138,82 @@ export default function Page() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Add Ingredient</Text>
+
+            <Text style={styles.modalLabel}>Name</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g. Chicken"
+              placeholderTextColor={COLORS.textLightGray}
+              value={form.name}
+              onChangeText={v => setForm(f => ({ ...f, name: v }))}
+            />
+
+            <View style={styles.modalRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={styles.modalLabel}>Quantity</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. 2"
+                  placeholderTextColor={COLORS.textLightGray}
+                  keyboardType="numeric"
+                  value={form.quantity}
+                  onChangeText={v => setForm(f => ({ ...f, quantity: v }))}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalLabel}>Unit</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 2 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {MEASUREMENT_OPTIONS.map(opt => (
+                      <TouchableOpacity
+                        key={opt}
+                        style={[styles.unitChip, form.measurement === opt && styles.unitChipActive]}
+                        onPress={() => setForm(f => ({ ...f, measurement: opt }))}
+                      >
+                        <Text style={[styles.unitChipText, form.measurement === opt && styles.unitChipTextActive]}>{opt}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            </View>
+
+            <Text style={styles.modalLabel}>Expiry Date</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="DD/MM/YYYY"
+              placeholderTextColor={COLORS.textLightGray}
+              keyboardType="numeric"
+              maxLength={10}
+              value={form.expiryDate}
+              onChangeText={v => {
+                const digits = v.replace(/\D/g, '');
+                let formatted = digits;
+                if (digits.length >= 3 && digits.length <= 4) {
+                  formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                } else if (digits.length > 4) {
+                  formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+                }
+                setForm(f => ({ ...f, expiryDate: formatted }));
+              }}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSave} onPress={saveIngredientFromModal}>
+                <Text style={styles.modalSaveText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <ScrollView contentContainerStyle={styles.container}>
 
         <Text style={styles.welcomeUser}>Welcome back, {username}</Text>
@@ -149,12 +248,26 @@ export default function Page() {
         </View>
 
         <View style={styles.ingredientsSection}>
-          <Text style={styles.sectionHeader}>Your Ingredients ({globalIngredients.length})</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeader}>Your Ingredients ({globalIngredients.length})</Text>
+            <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+              <Text style={styles.addButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.pillContainer}>
-            {globalIngredients.map((ingredient, index) => (
+            {ingredientDetails.map((ing, index) => (
               <View key={index} style={styles.pill}>
-                <Text style={styles.pillText}>{ingredient}</Text>
-                <TouchableOpacity onPress={() => removeIngredient(ingredient)}>
+                <View>
+                  <Text style={styles.pillText}>{ing.name}</Text>
+                  {(ing.quantity || ing.expiryDate) ? (
+                    <Text style={styles.pillMeta}>
+                      {ing.quantity ? `${ing.quantity} ${ing.measurement}` : ''}
+                      {ing.quantity && ing.expiryDate ? '  ·  ' : ''}
+                      {ing.expiryDate ? `Exp: ${ing.expiryDate}` : ''}
+                    </Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity onPress={() => removeIngredient(ing.name)}>
                   <Text style={styles.pillClose}>×</Text>
                 </TouchableOpacity>
               </View>
@@ -186,10 +299,14 @@ export default function Page() {
 
         <View style={styles.sliderSection}>
           <View style={styles.sliderHeaderRow}>
-            <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
-            <Text style={styles.sliderValue}>{globalMissingCount}</Text>
+            <View>
+              <Text style={styles.sectionHeader}>
+                Max Missing Ingredients{' '}
+                <Text style={styles.sliderValue}>{globalMissingCount}</Text>
+              </Text>
+              <Text style={styles.sliderSubtitle}>Updates live as you adjust recipe strictness</Text>
+            </View>
           </View>
-          <Text style={styles.sliderSubtitle}>Updates live as you adjust recipe strictness...</Text>
           
           <Slider
             style={styles.slider}
@@ -370,11 +487,10 @@ const styles = StyleSheet.create({
   tagPillTextSelected: {
     color: '#FFFFFF',
   },
-  sectionHeader: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: COLORS.textDark, 
-    marginBottom: 12 
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textDark,
   },
   pillContainer: { 
     flexDirection: 'row', 
@@ -404,21 +520,19 @@ const styles = StyleSheet.create({
   sliderSection: { 
     marginBottom: 24 
   },
-  sliderHeaderRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
+  sliderHeaderRow: {
+    marginBottom: 4,
   },
-  sliderValue: { 
-    fontSize: 22, 
-    fontWeight: '700', 
-    color: COLORS.primaryGreen 
+  sliderValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primaryGreen,
   },
-  sliderSubtitle: { 
-    fontSize: 13, 
-    color: COLORS.textLightGray, 
-    marginTop: -8, 
-    marginBottom: 16 
+  sliderSubtitle: {
+    fontSize: 13,
+    color: COLORS.textLightGray,
+    marginTop: 4,
+    marginBottom: 12,
   },
   slider: { 
     width: '100%', 
@@ -540,10 +654,129 @@ const styles = StyleSheet.create({
   recipeDetails: { 
     fontSize: 12 
   },
-  noRecipesText: { 
-    fontSize: 14, 
-    color: COLORS.textLightGray, 
-    fontStyle: 'italic', 
-    marginTop: 4 
-  }
+  noRecipesText: {
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    fontStyle: 'italic',
+    marginTop: 4
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primaryGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '400',
+  },
+  pillMeta: {
+    fontSize: 11,
+    color: COLORS.textLightGray,
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textLightGray,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 14,
+  },
+  modalInput: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    backgroundColor: '#FAFAFA',
+    color: COLORS.textDark,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 14,
+  },
+  unitChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    backgroundColor: '#F5F5F5',
+  },
+  unitChipActive: {
+    backgroundColor: COLORS.primaryGreen,
+    borderColor: COLORS.primaryGreen,
+  },
+  unitChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.textDark,
+  },
+  unitChipTextActive: {
+    color: '#FFFFFF',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 28,
+  },
+  modalCancel: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textLightGray,
+  },
+  modalSave: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSaveText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

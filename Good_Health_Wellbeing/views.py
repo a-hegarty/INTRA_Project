@@ -49,7 +49,7 @@ def _serialize_recipe(recipe, request):
 
 
 def api_recipes(request):
-    recipes_queryset = Recipe.objects.all().prefetch_related('ingredients', 'diet', 'tags')
+    recipes_queryset = Recipe.objects.filter(is_approved=True).prefetch_related('ingredients', 'diet', 'tags')
     recipes_list = [_serialize_recipe(recipe, request) for recipe in recipes_queryset]
     return JsonResponse(recipes_list, safe=False)
 

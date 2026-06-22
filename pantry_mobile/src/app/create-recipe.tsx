@@ -27,6 +27,11 @@ export default function CreateRecipe() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [allDbIngredients, setAllDbIngredients] = useState<string[]>([]);
+  
+  const [availableTags, setAvailableTags] = useState<string[]>(["Soup", "Sauce", "Dessert", "High Protein", "No-cook", "Difficult", "Quick", "Dinner", "Lunch", "Breakfast"]);
+  const [availableDiets, setAvailableDiets] = useState<string[]>(["Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", "Low-Carb"]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -66,6 +71,14 @@ export default function CreateRecipe() {
     setIngredients(prev => prev.filter(i => i !== item));
   };
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+
+  const toggleDiet = (diet: string) => {
+    setSelectedDiets(prev => prev.includes(diet) ? prev.filter(d => d !== diet) : [...prev, diet]);
+  };
+
   const handleSubmit = async () => {
     setErrorMsg('');
     if (!name.trim()) { setErrorMsg('Recipe name is required.'); return; }
@@ -82,6 +95,8 @@ export default function CreateRecipe() {
       formData.append('carbs', String(parseInt(carbs) || 0));
       formData.append('instructions', instructions.trim());
       formData.append('ingredients', JSON.stringify(ingredients));
+      formData.append('tags', JSON.stringify(selectedTags));
+      formData.append('diets', JSON.stringify(selectedDiets));
       formData.append('username', username || 'anonymoususer');
 
       if (imageUri) {
@@ -89,12 +104,10 @@ export default function CreateRecipe() {
         const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
         const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
         if (imageUri.startsWith('blob:') || imageUri.startsWith('http')) {
-          // Web: fetch the blob from the object URL
           const blobRes = await fetch(imageUri);
           const blob = await blobRes.blob();
           formData.append('image', blob, filename);
         } else {
-          // Native: use the RN FormData object format
           formData.append('image', { uri: imageUri, name: filename, type: mimeType } as any);
         }
       }
@@ -198,6 +211,42 @@ export default function CreateRecipe() {
               onChangeText={setCarbs}
             />
           </View>
+        </View>
+
+        <Text style={styles.label}>Diets</Text>
+        <View style={styles.pillContainer}>
+          {availableDiets.map((diet, i) => {
+            const isSelected = selectedDiets.includes(diet);
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[styles.filterPill, isSelected && styles.filterPillSelected]}
+                onPress={() => toggleDiet(diet)}
+              >
+                <Text style={[styles.filterPillText, isSelected && styles.filterPillTextSelected]}>
+                  {diet}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={styles.label}>Tags</Text>
+        <View style={styles.pillContainer}>
+          {availableTags.map((tag, i) => {
+            const isSelected = selectedTags.includes(tag);
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[styles.filterPill, isSelected && styles.filterPillSelected]}
+                onPress={() => toggleTag(tag)}
+              >
+                <Text style={[styles.filterPillText, isSelected && styles.filterPillTextSelected]}>
+                  {tag}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <Text style={styles.label}>Ingredients *</Text>
@@ -329,6 +378,26 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 14, fontWeight: '500', color: COLORS.textGreen, marginRight: 6 },
   pillClose: { fontSize: 16, fontWeight: '600', color: COLORS.textGreen, marginTop: -2 },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    borderWidth: 1,
+    borderColor: COLORS.borderGray,
+  },
+  filterPillSelected: {
+    backgroundColor: COLORS.primaryGreen,
+    borderColor: COLORS.primaryGreen,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.textDark,
+  },
+  filterPillTextSelected: {
+    color: '#FFFFFF',
+  },
   submitBtn: {
     marginTop: 32,
     height: 52,

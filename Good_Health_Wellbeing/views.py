@@ -3,10 +3,12 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import authenticate, get_user_model
 from .forms import *
 from .models import *
 
-# Create your views here.
+DjangoUser = get_user_model()
+
 def index(request):
     return render(request, "index.html")
 
@@ -47,12 +49,10 @@ def _serialize_recipe(recipe, request):
         'image_url': image_url,
     }
 
-
 def api_recipes(request):
     recipes_queryset = Recipe.objects.filter(is_approved=True).prefetch_related('ingredients', 'diet', 'tags')
     recipes_list = [_serialize_recipe(recipe, request) for recipe in recipes_queryset]
     return JsonResponse(recipes_list, safe=False)
-
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -92,7 +92,7 @@ def api_create_recipe(request):
     cuisine_name = (get('cuisine', 'General') or 'General').strip()
     username = (get('username', 'anonymoususer') or 'anonymoususer').strip()
 
-    author, _ = User.objects.get_or_create(username=username)
+    author, _ = DjangoUser.objects.get_or_create(username=username)
     cuisine, _ = Cuisine.objects.get_or_create(name=cuisine_name)
 
     recipe = Recipe.objects.create(
@@ -126,3 +126,51 @@ def api_create_recipe(request):
             recipe.tags.add(tag)
 
     return JsonResponse(_serialize_recipe(recipe, request), status=201)
+
+@csrf_exempt
+def register_user(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        
+        if DjangoUser.objects.filter(username=username).exists():
+            return JsonResponse({'error': 'Username already taken'}, status=400)
+            
+        user = DjangoUser.objects.create_user(username=username, email=email, password=password)
+        return JsonResponse({'message': 'User created successfully', 'username': user.username})
+
+@csrf_exempt
+def login_user(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            saved_diets = []
+            saved_favorites = []
+            
+            try:
+                if hasattr(user, 'profile') and user.profile.dietary_restrictions:
+                    saved_diets = [d.name for d in user.profile.dietary_restrictions.all()]
+            except Exception:
+                pass
+
+            try:
+                if hasattr(user, 'favorite_recipes'):
+                    saved_favorites = [r.id for r in user.favorite_recipes.all()]
+            except Exception:
+                pass
+
+            return JsonResponse({
+                'authenticated': True, 
+                'username': user.username, 
+                'email': user.email,
+                'diets': saved_diets,
+                'favorites': saved_favorites
+            })
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=400)

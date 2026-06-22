@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import Slider from '@react-native-community/slider';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, BackendRecipe } from '../constants/api';
@@ -9,26 +8,6 @@ import { API_BASE_URL, BackendRecipe } from '../constants/api';
 import { COLORS } from '../../theme';
 
 const DIETARY_FILTERS = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Keto', 'Dairy-Free', 'Nut-Free'];
-
-const EQUIPMENT_OPTIONS = [
-  'Microwave',
-  'Air Fryer',
-  'Oven',
-  'Stovetop',
-  'Slow Cooker',
-  'Instant Pot',
-  'Blender',
-  'Grill',
-];
-
-const RECOMMENDATION_PRIORITIES = [
-  'Healthy Meals',
-  'Low Cost',
-  'Reduce Waste',
-  'Quick & Easy',
-  'High Protein',
-  'Family Friendly',
-];
 
 function getIngredientNames(recipe: BackendRecipe): string[] {
   return recipe.ingredients.map((ing) => (typeof ing === 'string' ? ing : ing.name));
@@ -64,22 +43,20 @@ function ToggleGrid({
 
 export default function ProfilePage() {
   const {
+    isLoggedIn,
     username,
     displayName,
     setDisplayName,
     email,
     setEmail,
+    password,
+    setPassword,
     dietaryRestrictions,
     toggleDiet,
-    maxCookingTime,
-    setMaxCookingTime,
-    equipment,
-    toggleEquipment,
-    recommendationPriorities,
-    togglePriority,
     favoriteRecipeIds,
     toggleFavoriteRecipe,
     logout,
+    userLoaded,
   } = useAuth();
   const router = useRouter();
   const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
@@ -102,95 +79,93 @@ export default function ProfilePage() {
     fetchRecipes();
   }, []);
 
+  if (!userLoaded) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primaryGreen} />
+      </SafeAreaView>
+    );
+  }
+
   const avatarInitial = (displayName || username || '?').charAt(0).toUpperCase();
   const favoriteRecipes = recipesDatabase.filter((recipe) => favoriteRecipeIds.includes(recipe.id));
   const availableToFavorite = recipesDatabase.filter((recipe) => !favoriteRecipeIds.includes(recipe.id));
-
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/');
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>{avatarInitial}</Text>
+        {/* --- DYNAMIC HEADER CONDITIONAL --- */}
+        {isLoggedIn ? (
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>{avatarInitial}</Text>
+            </View>
+            <Text style={styles.username}>{displayName || username || 'Your Profile'}</Text>
+            <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+              <Text style={styles.logoutBtnText}>Logout</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.username}>{displayName || username || 'Your Profile'}</Text>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutBtnText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <Text style={styles.sectionSubtitle}>Your name and contact details.</Text>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Your full name"
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholderTextColor={COLORS.textLightGray}
-            />
+        ) : (
+          <View style={styles.profileHeader}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: '#E0E0E0' }]}>
+              <Text style={[styles.avatarText, { color: '#757575' }]}>?</Text>
+            </View>
+            <Text style={styles.username}>Not Logged In</Text>
+            <Text style={styles.guestSubtitle}>Save your preferences permanently across your devices.</Text>
+            <TouchableOpacity 
+              style={[styles.logoutBtn, { backgroundColor: COLORS.primaryGreen, borderColor: COLORS.primaryGreen }]} 
+              onPress={() => router.push('/login')}
+            >
+              <Text style={[styles.logoutBtnText, { color: '#fff' }]}>Log In / Sign Up</Text>
+            </TouchableOpacity>
           </View>
+        )}
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@example.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={COLORS.textLightGray}
-            />
-          </View>
-        </View>
+        {/* Only show operational Account Details field block if user is verified */}
+        {isLoggedIn && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionSubtitle}>Your security credentials and identity details.</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cooking Preferences</Text>
-          <Text style={styles.sectionSubtitle}>Help us tailor recipe suggestions to your kitchen.</Text>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Your full name"
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholderTextColor={COLORS.textLightGray}
+              />
+            </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Max cooking time: {maxCookingTime} min</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={15}
-              maximumValue={120}
-              step={15}
-              value={maxCookingTime}
-              onValueChange={setMaxCookingTime}
-              minimumTrackTintColor={COLORS.primaryGreen}
-              maximumTrackTintColor={COLORS.borderGray}
-              thumbTintColor={COLORS.primaryGreen}
-            />
-            <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabelText}>15 min</Text>
-              <Text style={styles.sliderLabelText}>2 hrs</Text>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.textLightGray}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••••••"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                placeholderTextColor={COLORS.textLightGray}
+              />
             </View>
           </View>
-
-          <Text style={styles.subsectionTitle}>Kitchen Equipment</Text>
-          <Text style={styles.subsectionSubtitle}>Select what you have available at home.</Text>
-          <ToggleGrid items={EQUIPMENT_OPTIONS} activeItems={equipment} onToggle={toggleEquipment} />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommendation Priorities</Text>
-          <Text style={styles.sectionSubtitle}>What matters most when we suggest meals?</Text>
-          <ToggleGrid
-            items={RECOMMENDATION_PRIORITIES}
-            activeItems={recommendationPriorities}
-            onToggle={togglePriority}
-          />
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Dietary Restrictions</Text>
@@ -296,12 +271,6 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 48,
   },
-  backLink: {
-    color: COLORS.textGreen,
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 24,
-  },
   profileHeader: {
     alignItems: 'center',
     marginBottom: 32,
@@ -328,11 +297,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textDark,
   },
+  guestSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLightGray,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
   logoutBtn: {
     marginTop: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
     backgroundColor: '#FFF0F0',
     borderWidth: 1,
     borderColor: '#FFAAAA',
@@ -340,7 +317,7 @@ const styles = StyleSheet.create({
   logoutBtnText: {
     color: '#FF3B30',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 14,
   },
   section: {
     marginBottom: 28,
@@ -363,11 +340,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginTop: 8,
   },
-  subsectionSubtitle: {
-    fontSize: 13,
-    color: COLORS.textLightGray,
-    marginBottom: 12,
-  },
   formGroup: {
     marginBottom: 16,
   },
@@ -386,19 +358,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#FAFAFA',
     color: COLORS.textDark,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  sliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -4,
-  },
-  sliderLabelText: {
-    fontSize: 12,
-    color: COLORS.textLightGray,
   },
   grid: {
     gap: 10,

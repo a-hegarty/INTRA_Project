@@ -15,6 +15,7 @@ export default function Page() {
   const [recipesDatabase, setRecipesDatabase] = useState<BackendRecipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [recipeSearch, setRecipeSearch] = useState('');
   
   const { 
     username, 
@@ -76,6 +77,10 @@ export default function Page() {
   const removeIngredient = (name: string) => {
     setGlobalIngredients(globalIngredients.filter(item => item !== name));
   };
+
+  const displayedRecipes = recipeSearch.trim()
+    ? recipesDatabase.filter(r => r.name.toLowerCase().includes(recipeSearch.toLowerCase()))
+    : null;
 
   const matchingRecipes = recipesDatabase.filter(recipe => {
     const recipeDiets = recipe.diets || [];
@@ -211,16 +216,27 @@ export default function Page() {
 
         <View style={styles.recipesContainer}>
           <View style={styles.recipesHeaderRow}>
-            <Text style={styles.sectionHeader}>Matching Recipes ({matchingRecipes.length})</Text>
-            {dietaryRestrictions.length > 0 && (
+            <Text style={styles.sectionHeader}>
+              {displayedRecipes ? `Search Results (${displayedRecipes.length})` : `Matching Recipes (${matchingRecipes.length})`}
+            </Text>
+            {!displayedRecipes && dietaryRestrictions.length > 0 && (
               <Text style={styles.dietLabel}>
                 Filtered for: {dietaryRestrictions.join(', ')}
               </Text>
             )}
           </View>
-          {matchingRecipes.length > 0 ? (
+
+          <TextInput
+            style={styles.recipeSearchBar}
+            placeholder="Search recipes by name..."
+            placeholderTextColor={COLORS.textLightGray}
+            value={recipeSearch}
+            onChangeText={setRecipeSearch}
+          />
+
+          {(displayedRecipes ?? matchingRecipes).length > 0 ? (
             <View style={styles.recipeGrid}>
-              {matchingRecipes.map(recipe => {
+              {(displayedRecipes ?? matchingRecipes).map(recipe => {
                 const recipeIngs = recipe.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name);
                 const missingList = recipeIngs.filter(ing => !globalIngredients.includes(ing));
                 const isFavorite = favoriteRecipeIds.includes(recipe.id);
@@ -287,7 +303,9 @@ export default function Page() {
               })}
             </View>
           ) : (
-            <Text style={styles.noRecipesText}>No recipes match your ingredients filter setup.</Text>
+            <Text style={styles.noRecipesText}>
+              {displayedRecipes ? 'No recipes found with that name.' : 'No recipes match your ingredients filter setup.'}
+            </Text>
           )}
         </View>
 
@@ -550,6 +568,17 @@ const styles = StyleSheet.create({
     color: COLORS.textLightGray,
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  recipeSearchBar: {
+    height: 48,
+    borderColor: COLORS.borderGray,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    backgroundColor: '#FAFAFA',
+    color: COLORS.textDark,
+    marginBottom: 14,
   },
   createRecipeBtn: {
     borderWidth: 1.5,

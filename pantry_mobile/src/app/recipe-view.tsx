@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 export default function RecipeViewPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { favoriteRecipeIds, toggleFavoriteRecipe } = useAuth();
+  const { favoriteRecipeIds, toggleFavoriteRecipe, globalIngredients } = useAuth();
 
   const recipeId = Number(params.id as string) || 0;
   const recipeName = params.name as string || 'Unknown Recipe';
@@ -34,6 +34,14 @@ export default function RecipeViewPage() {
     .split('\n')
     .map(step => step.trim())
     .filter(step => step.length > 0);
+
+  const sortedIngredients = [...dynamicIngredients].sort((a, b) => {
+    const hasA = globalIngredients.includes(a);
+    const hasB = globalIngredients.includes(b);
+    if (hasA && !hasB) return -1;
+    if (!hasA && hasB) return 1;
+    return 0;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -95,13 +103,18 @@ export default function RecipeViewPage() {
 
           <Text style={styles.sectionHeading}>Ingredients</Text>
           <View style={styles.ingredientsContainer}>
-            {dynamicIngredients.length > 0 ? (
-              dynamicIngredients.map((ingredient, index) => (
-                <View key={index} style={styles.ingredientRow}>
-                  <Text style={styles.ingredientDot}>•</Text>
-                  <Text style={styles.ingredientText}>{ingredient}</Text>
-                </View>
-              ))
+            {sortedIngredients.length > 0 ? (
+              sortedIngredients.map((ingredient, index) => {
+                const isMissing = !globalIngredients.includes(ingredient);
+                return (
+                  <View key={index} style={styles.ingredientRow}>
+                    <Text style={[styles.ingredientDot, isMissing && { color: '#FF9500' }]}>•</Text>
+                    <Text style={[styles.ingredientText, isMissing && { color: '#FF9500', fontWeight: '600' }]}>
+                      {ingredient}
+                    </Text>
+                  </View>
+                );
+              })
             ) : (
               <Text style={styles.ingredientText}>No specific items required.</Text>
             )}

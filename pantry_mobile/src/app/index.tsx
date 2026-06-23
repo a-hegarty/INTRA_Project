@@ -199,7 +199,7 @@ export default function Page() {
             <Text style={styles.sectionHeader}>Max Missing Ingredients</Text>
             <Text style={styles.sliderValue}>{globalMissingCount}</Text>
           </View>
-          <Text style={styles.sliderSubtitle}>Updates live as you adjust recipe strictness...</Text>
+          <Text style={styles.sliderSubtitle}>Show recipes where I'm missing up to this many ingredients</Text>
           
           <Slider
             style={styles.slider}

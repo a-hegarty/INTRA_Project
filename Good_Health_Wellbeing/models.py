@@ -59,7 +59,7 @@ class Recipe(models.Model):
     instructions = models.TextField(default='')
     image = models.ImageField(upload_to='recipes/', blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    is_approved = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
